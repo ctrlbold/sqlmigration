@@ -15,6 +15,9 @@
     "editor.autoSurround": "languageDefined",
     "powershell.codeFormatting.useConstantStrings": false,
     // now your double clicks on a variable names include the dollar sign '$'
+    "files.associations": {
+      "*.help.txt": "markdown"
+    },
     // https://twitter.com/TylerLeonhardt/status/1102749805233737729
     "[powershell]": {
         "editor.wordSeparators": "`~!@#%^&*()-=+[{]}\\|;:'\",.<>/?"
