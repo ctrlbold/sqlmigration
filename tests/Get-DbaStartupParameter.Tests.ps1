@@ -19,7 +19,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $results = Get-DbaStartupParameter -SqlInstance $script:instance2
             $resultsSimple = Get-DbaStartParameter -SqlInstance $script:instance2 -Simple
         }
-        It "Gets Results" {
+        It "Results return anything" {
             $results | Should -Not -Be $null
         }
         It "Only outputs results for Simple parameter" {
