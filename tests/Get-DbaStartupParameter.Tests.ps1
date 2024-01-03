@@ -15,9 +15,17 @@ Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
 
 Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
     Context "Command actually works" {
-        $results = Get-DbaStartupParameter -SqlInstance $script:instance2
-        it "Gets Results" {
-            $results | Should Not Be $null
+        BeforeEach {
+            $results = Get-DbaStartupParameter -SqlInstance $script:instance2
+            $resultsSimple = Get-DbaStartParameter -SqlInstance $script:instance2 -Simple
+        }
+        It "Gets Results" {
+            $results | Should -Not -Be $null
+        }
+        It "Only outputs results for Simple parameter" {
+            # Picking property that will not exist on Simple object output
+            # Only check for property name because it may not have a value even when you don't use -Simple parameter
+            $resultSimple.PSObject.Properties.Name -notmatch "CommandPromptStart" | Should -BeTrue
         }
     }
 }
