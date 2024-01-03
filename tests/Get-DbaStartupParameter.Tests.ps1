@@ -23,7 +23,7 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
         It "Only outputs results for Simple parameter" {
             # Picking property that will not exist on Simple object output
             # Only check for property name because it may not have a value even when you don't use -Simple parameter
-            "CommandPromptStart" -notint $resultSimple.PSObject.Properties.Name | Should -BeTrue
+            "CommandPromptStart" -notin $resultSimple.PSObject.Properties.Name | Should -BeTrue
         }
     }
 }
