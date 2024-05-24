@@ -32,10 +32,10 @@ if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\dbatools.library'
     Install-Module -Name dbatools.library -Force -AllowPrerelease | Out-Null
 }
 
-#Get Pester (to run tests) - choco isn't working onall scenarios, weird
+#Get Pester (to run tests) - choco isn't working on all scenarios, weird
 Write-Host -Object "appveyor.prep: Install Pester" -ForegroundColor DarkGreen
-if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\4.4.2')) {
-    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.2 | Out-Null
+if (-not(Test-Path 'C:\Program Files\WindowsPowerShell\Modules\Pester\5.5.0')) {
+    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 5.5.0 | Out-Null
 }
 
 #Setup DbatoolsConfig Path.DbatoolsExport path

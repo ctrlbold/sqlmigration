@@ -64,7 +64,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.timespan | Should -Be 15724800000
             }
         }
-
         Context "Data type datetime" {
             It " has a column called datetime" {
                 $result.Columns.ColumnName.Contains('datetime') | Should -Be $true
@@ -77,7 +76,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.datetime -eq $date | Should -Be $true
             }
         }
-
         Context "Data type char" {
             It " has a column called char" {
                 $result.Columns.ColumnName.Contains('char') | Should -Be $true
@@ -89,7 +87,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.char | Should -Be "T"
             }
         }
-
         Context "Data type true" {
             It " has a column called true" {
                 $result.Columns.ColumnName.Contains('true') | Should -Be $true
@@ -101,7 +98,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.true | Should -Be $true
             }
         }
-
         Context "Data type false" {
             It " has a column called false" {
                 $result.Columns.ColumnName.Contains('false') | Should -Be $true
@@ -113,7 +109,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.false | Should -Be $false
             }
         }
-
         Context "Data type null" {
             It " has a column called null" {
                 $result.Columns.ColumnName.Contains('null') | Should -Be $true
@@ -125,7 +120,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.null | Should -Be $false #should actually be $null but its hard to compare :)
             }
         }
-
         Context "Data type string" {
             It " has a column called string" {
                 $result.Columns.ColumnName.Contains('string') | Should -Be $true
@@ -137,7 +131,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.string | Should -Be "it's a boy."
             }
         }
-
         Context "Data type UInt64" {
             It " has a column called UInt64" {
                 $result.Columns.ColumnName.Contains('UInt64') | Should -Be $true
@@ -149,7 +142,6 @@ Describe "ConvertTo-DbaDataTable" {
                 $result.UInt64 | Should -Be 123456
             }
         }
-
         Context "Data type myObject" {
             It " has a column called myObject" {
                 $result.Columns.ColumnName.Contains('myObject') | Should -Be $true
@@ -190,7 +182,6 @@ Describe "ConvertTo-DbaDataTable" {
             (ConvertTo-DbaDataTable -InputObject $obj -TimeSpanType TotalSeconds).Timespan | Should -Be 86400
         }
     }
-
     Context "Verifying IgnoreNull" {
         BeforeAll {
             # To be able to force null
@@ -227,7 +218,6 @@ Describe "ConvertTo-DbaDataTable" {
             $warn.message -eq $null | Should -Be $true
         }
     }
-
     Context "Verifying script properties returning null" {
         It "Returns string column if a script property returns null" {
             $myObj = New-Object -TypeName psobject -Property @{ Name = 'Test' }
@@ -237,7 +227,6 @@ Describe "ConvertTo-DbaDataTable" {
 
         }
     }
-
     Context "Verifying a datatable gets cloned when passed in" {
         BeforeAll {
             $obj = New-Object -TypeName psobject -Property @{

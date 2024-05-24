@@ -8,9 +8,12 @@ if (Test-Path "$PSScriptRoot\constants.local.ps1") {
     $script:instance3 = "dbatools3"
     $script:instances = @($script:instance1, $script:instance2)
 
-    $SqlCred = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
-    $PSDefaultParameterValues = @{
-        "*:SqlCredential" = $sqlCred
+    $script:SqlCred = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
+    # We don't want to affect the global PSDefaultParameterValues
+    if (-not $PSDefaultParameterValues.ContainsKey('*:SqlCredential')) {
+        $PSDefaultParameterValues = $PSDefaultParameterValues + @{
+            "*:SqlCredential" = [PSCredential]::new('sa', (ConvertTo-SecureString $env:SA_PASSWORD -AsPlainText -Force))
+        }
     }
 } elseif ($env:GITHUB_WORKSPACE) {
     $script:dbatoolsci_computer = "localhost"
