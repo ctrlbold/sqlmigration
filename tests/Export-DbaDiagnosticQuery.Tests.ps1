@@ -1,27 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject', 'ConvertTo', 'Path', 'Suffix', 'NoPlanExport', 'NoQueryExport', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaDiagnosticQuery" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Export-DbaDiagnosticQuery
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "InputObject",
+                "ConvertTo",
+                "Path",
+                "Suffix",
+                "NoPlanExport",
+                "NoQueryExport",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    AfterAll {
-        Get-ChildItem "C:\temp\dbatoolsci" -Recurse | Remove-Item -ErrorAction Ignore
-        Get-Item "C:\temp\dbatoolsci" | Remove-Item -ErrorAction Ignore
+Describe "Export-DbaDiagnosticQuery" -Tag "IntegrationTests" {
+    BeforeAll {
+        $testPath = "C:\temp\dbatoolsci"
     }
-    Context "Verifying output" {
-        It "exports results to one file and creates directory if required" {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.instance2 -QueryName 'Memory Clerk Usage' | Export-DbaDiagnosticQuery -Path "C:\temp\dbatoolsci"
-            (Get-ChildItem "C:\temp\dbatoolsci").Count | Should Be 1
+
+    AfterAll {
+        Get-ChildItem $testPath -Recurse -ErrorAction Ignore | Remove-Item -ErrorAction Ignore
+        Get-Item $testPath -ErrorAction Ignore | Remove-Item -ErrorAction Ignore
+    }
+
+    Context "When exporting diagnostic query results" {
+        BeforeAll {
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.Instance2 -QueryName "Memory Clerk Usage" | 
+                Export-DbaDiagnosticQuery -Path $testPath
+        }
+
+        It "Should create output directory and export results to one file" {
+            (Get-ChildItem $testPath).Count | Should -Be 1
         }
     }
 }

@@ -1,141 +1,168 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'AllUserDatabases', 'Path', 'FilePath', 'DacOption', 'ExtendedParameters', 'ExtendedProperties', 'Type', 'Table', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaDacPackage" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Export-DbaDacPackage
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential", 
+                "Database",
+                "ExcludeDatabase",
+                "AllUserDatabases",
+                "Path",
+                "FilePath",
+                "DacOption",
+                "ExtendedParameters",
+                "ExtendedProperties",
+                "Type",
+                "Table",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasParams = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParams | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaDacPackage" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $dbname = "dbatoolsci_exportdacpac_$random"
-        try {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $null = $server.Query("Create Database [$dbname]")
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
-            $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $null = $server.Query("Create Database [$dbname]")
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname
+        $null = $db.Query("CREATE TABLE dbo.example (id int, PRIMARY KEY (id));
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-        } catch { } # No idea why appveyor can't handle this
 
-        $testFolder = 'C:\Temp\dacpacs'
+        $testFolder = "C:\Temp\dacpacs"
 
         $dbName2 = "dbatoolsci:2_$random"
         $dbName2Escaped = "dbatoolsci`$2_$random"
 
         $null = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $dbName2
     }
+
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $dbname, $dbName2 -Confirm:$false
     }
 
-    # See https://github.com/dataplat/dbatools/issues/7038
-    Context "Ensure the database name is part of the generated filename" {
-        It "Database name is included in the output filename" {
+    Context "When exporting database names in filenames" {
+        It "Should include database name in the output filename" {
             $result = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname
             $result.Path | Should -BeLike "*$($dbName)*"
         }
 
-        It "Database names with invalid filesystem chars are successfully exported" {
+        It "Should handle database names with invalid filesystem chars" {
             $result = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname, $dbName2
-            $result.Path.Count | Should -Be 2
+            $result.Path.Count | Should -BeExactly 2
             $result.Path[0] | Should -BeLike "*$($dbName)*"
             $result.Path[1] | Should -BeLike "*$($dbName2Escaped)*"
         }
     }
-    Context "Extract dacpac" {
-        BeforeEach {
+
+    Context "When extracting dacpac files" {
+        BeforeAll {
             New-Item $testFolder -ItemType Directory -Force
             Push-Location $testFolder
         }
-        AfterEach {
+
+        AfterAll {
             Pop-Location
             Remove-Item $testFolder -Force -Recurse
         }
-        if ((Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table example)) {
-            # Sometimes appveyor bombs
-            It "exports a dacpac" {
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname
-                $results.Path | Should -Not -BeNullOrEmpty
-                Test-Path $results.Path | Should -Be $true
-                if (($results).Path) {
-                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-                }
+
+        It "Should export a dacpac successfully" {
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname
+            $results.Path | Should -Not -BeNullOrEmpty
+            Test-Path $results.Path | Should -BeTrue
+            if ($results.Path) {
+                Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
             }
-            It "exports to the correct directory" {
-                $relativePath = '.\'
-                $expectedPath = (Resolve-Path $relativePath).Path
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Path $relativePath
-                $results.Path | Split-Path | Should -Be $expectedPath
-                Test-Path $results.Path | Should -Be $true
+        }
+
+        It "Should export to the specified directory" {
+            $relativePath = '.\'
+            $expectedPath = (Resolve-Path $relativePath).Path
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Path $relativePath
+            $results.Path | Split-Path | Should -BeExactly $expectedPath
+            Test-Path $results.Path | Should -BeTrue
+        }
+
+        It "Should export dacpac with specified table list" {
+            $relativePath = '.\extract.dacpac'
+            $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $relativePath -Table example
+            $results.Path | Should -BeExactly $expectedPath
+            Test-Path $results.Path | Should -BeTrue
+            if ($results.Path) {
+                Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
             }
-            It "exports dacpac with a table list" {
-                $relativePath = '.\extract.dacpac'
-                $expectedPath = Join-Path (Get-Item .) 'extract.dacpac'
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $relativePath -Table example
-                $results.Path | Should -Be $expectedPath
-                Test-Path $results.Path | Should -Be $true
-                if (($results).Path) {
-                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-                }
-            }
-            It "uses EXE to extract dacpac" {
-                $exportProperties = "/p:ExtractAllTableData=True"
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -ExtendedProperties $exportProperties
-                $results.Path | Should -Not -BeNullOrEmpty
-                Test-Path $results.Path | Should -Be $true
-                if (($results).Path) {
-                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-                }
+        }
+
+        It "Should use EXE to extract dacpac with extended properties" {
+            $exportProperties = "/p:ExtractAllTableData=True"
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -ExtendedProperties $exportProperties
+            $results.Path | Should -Not -BeNullOrEmpty
+            Test-Path $results.Path | Should -BeTrue
+            if ($results.Path) {
+                Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
             }
         }
     }
-    Context "Extract bacpac" {
-        BeforeEach {
+
+    Context "When extracting bacpac files" {
+        BeforeAll {
             New-Item $testFolder -ItemType Directory -Force
             Push-Location $testFolder
         }
-        AfterEach {
+
+        AfterAll {
             Pop-Location
             Remove-Item $testFolder -Force -Recurse
         }
-        if ((Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database $dbname -Table example)) {
-            # Sometimes appveyor bombs
-            It "exports a bacpac" {
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Type Bacpac
-                $results.Path | Should -Not -BeNullOrEmpty
-                Test-Path $results.Path | Should -Be $true
-                if (($results).Path) {
-                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-                }
+
+        It "Should export a bacpac successfully" {
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -Type Bacpac
+            $results.Path | Should -Not -BeNullOrEmpty
+            Test-Path $results.Path | Should -BeTrue
+            if ($results.Path) {
+                Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
             }
-            It "exports bacpac with a table list" {
-                $relativePath = '.\extract.bacpac'
-                $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $relativePath -Table example -Type Bacpac
-                $results.Path | Should -Be $expectedPath
-                Test-Path $results.Path | Should -Be $true
-                if (($results).Path) {
-                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-                }
+        }
+
+        It "Should export bacpac with specified table list" {
+            $relativePath = '.\extract.bacpac'
+            $expectedPath = Join-Path (Get-Item .) 'extract.bacpac'
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -FilePath $relativePath -Table example -Type Bacpac
+            $results.Path | Should -BeExactly $expectedPath
+            Test-Path $results.Path | Should -BeTrue
+            if ($results.Path) {
+                Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
             }
-            It "uses EXE to extract bacpac" {
-                $exportProperties = "/p:TargetEngineVersion=Default"
-                $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -ExtendedProperties $exportProperties -Type Bacpac
-                $results.Path | Should -Not -BeNullOrEmpty
-                Test-Path $results.Path | Should -Be $true
-                if (($results).Path) {
-                    Remove-Item -Confirm:$false -Path ($results).Path -ErrorAction SilentlyContinue
-                }
+        }
+
+        It "Should use EXE to extract bacpac with extended properties" {
+            $exportProperties = "/p:TargetEngineVersion=Default"
+            $results = Export-DbaDacPackage -SqlInstance $TestConfig.instance1 -Database $dbname -ExtendedProperties $exportProperties -Type Bacpac
+            $results.Path | Should -Not -BeNullOrEmpty
+            Test-Path $results.Path | Should -BeTrue
+            if ($results.Path) {
+                Remove-Item -Confirm:$false -Path $results.Path -ErrorAction SilentlyContinue
             }
         }
     }

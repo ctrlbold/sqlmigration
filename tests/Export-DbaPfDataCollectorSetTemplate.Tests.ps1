@@ -1,33 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'Credential', 'CollectorSet', 'Path', 'FilePath', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaPfDataCollectorSetTemplate" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Export-DbaPfDataCollectorSetTemplate
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "ComputerName",
+                "Credential", 
+                "CollectorSet",
+                "Path",
+                "FilePath",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    BeforeEach {
-        $null = Get-DbaPfDataCollectorSetTemplate -Template 'Long Running Queries' | Import-DbaPfDataCollectorSetTemplate
+Describe "Export-DbaPfDataCollectorSetTemplate" -Tag "IntegrationTests" {
+    BeforeAll {
+        $null = Get-DbaPfDataCollectorSetTemplate -Template "Long Running Queries" | Import-DbaPfDataCollectorSetTemplate
     }
+
     AfterAll {
-        $null = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Remove-DbaPfDataCollectorSet -Confirm:$false
+        $null = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Remove-DbaPfDataCollectorSet -Confirm:$false
     }
-    Context "Verifying command returns all the required results" {
-        It "returns a file system object" {
-            $results = Get-DbaPfDataCollectorSet -CollectorSet 'Long Running Queries' | Export-DbaPfDataCollectorSetTemplate
-            $results.BaseName | Should Be 'Long Running Queries'
+
+    Context "When exporting collector set templates" {
+        It "Returns a file system object when using pipeline input" {
+            $results = Get-DbaPfDataCollectorSet -CollectorSet "Long Running Queries" | Export-DbaPfDataCollectorSetTemplate
+            $results.BaseName | Should -Be "Long Running Queries"
         }
-        It "returns a file system object" {
-            $results = Export-DbaPfDataCollectorSetTemplate -CollectorSet 'Long Running Queries'
-            $results.BaseName | Should Be 'Long Running Queries'
+
+        It "Returns a file system object when using parameter input" {
+            $results = Export-DbaPfDataCollectorSetTemplate -CollectorSet "Long Running Queries"
+            $results.BaseName | Should -Be "Long Running Queries"
         }
     }
 }

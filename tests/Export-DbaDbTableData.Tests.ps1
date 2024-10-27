@@ -1,27 +1,51 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'InputObject', 'Path', 'FilePath', 'Encoding', 'BatchSeparator', 'NoPrefix', 'Passthru', 'NoClobber', 'Append', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaDbTableData" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Export-DbaDbTableData
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                'InputObject',
+                'Path',
+                'FilePath',
+                'Encoding',
+                'BatchSeparator',
+                'NoPrefix',
+                'Passthru',
+                'NoClobber',
+                'Append',
+                'EnableException',
+                'Confirm',
+                'WhatIf'
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasParams = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasParams | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaDbTableData" -Tags "IntegrationTests" {
     BeforeAll {
-        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.Instance1 -Database tempdb
         $null = $db.Query("CREATE TABLE dbo.dbatoolsci_example (id int);
             INSERT dbo.dbatoolsci_example
             SELECT top 10 1
             FROM sys.objects")
         $null = $db.Query("Select * into dbatoolsci_temp from sys.databases")
     }
+
     AfterAll {
         try {
             $null = $db.Query("DROP TABLE dbo.dbatoolsci_example")
@@ -31,20 +55,33 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         }
     }
 
-    It "exports the table data" {
-        $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
-        $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example | Export-DbaDbTableData -Passthru
-        "$results" | Should -match $escaped
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_temp | Export-DbaDbTableData -Passthru
-        "$results" | Should -Match $secondescaped
+    Context "When exporting a single table" {
+        BeforeAll {
+            $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
+            $secondEscaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.Instance1 -Database tempdb -Table dbatoolsci_example | 
+                Export-DbaDbTableData -Passthru
+        }
+
+        It "Should export table data with correct INSERT statement" {
+            "$results" | Should -Match $escaped
+        }
     }
 
-    It "supports piping more than one table" {
-        $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
-        $secondescaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-        $results = Get-DbaDbTable -SqlInstance $TestConfig.instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | Export-DbaDbTableData -Passthru
-        "$results" | Should -match $escaped
-        "$results" | Should -match $secondescaped
+    Context "When exporting multiple tables" {
+        BeforeAll {
+            $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
+            $secondEscaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.Instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | 
+                Export-DbaDbTableData -Passthru
+        }
+
+        It "Should export first table data correctly" {
+            "$results" | Should -Match $escaped
+        }
+
+        It "Should export second table data correctly" {
+            "$results" | Should -Match $secondEscaped
+        }
     }
 }

@@ -1,20 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'Identity', 'SqlCredential', 'Credential', 'Path', 'FilePath', 'ExcludePassword', 'Append', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaCredential" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Export-DbaCredential
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "Identity",
+                "SqlCredential",
+                "Credential",
+                "Path",
+                "FilePath",
+                "ExcludePassword",
+                "Append",
+                "InputObject",
+                "EnableException"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaCredential" -Tag "IntegrationTests" {
     BeforeAll {
         $plaintext = "ReallyT3rrible!"
         $password = ConvertTo-SecureString $plaintext -AsPlainText -Force
@@ -22,6 +42,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = New-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_Hulk -Password $password
         $allfiles = @()
     }
+
     AfterAll {
         try {
             (Get-DbaCredential -SqlInstance $TestConfig.instance2 -Identity dbatoolsci_CaptainAcred, dbatoolsci_Hulk -ErrorAction Stop -WarningAction SilentlyContinue).Drop()
@@ -29,74 +50,85 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $null = $allfiles | Remove-Item -ErrorAction Ignore
     }
 
-    Context "Should export all credentails" {
-        $file = Export-DbaCredential -SqlInstance $TestConfig.instance2
-        $results = Get-Content -Path $file -Raw
-        $allfiles += $file
-        It "Should have information" {
-            $results | Should -Not -Be Null
+    Context "When exporting all credentials" {
+        BeforeAll {
+            $file = Export-DbaCredential -SqlInstance $TestConfig.instance2
+            $results = Get-Content -Path $file -Raw
+            $allfiles += $file
         }
-        It "Should have all users" {
+
+        It "Returns content" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Contains all test credentials" {
             $results | Should -Match 'CaptainACred|Hulk'
         }
-        It "Should have the password" {
+
+        It "Includes the password" {
             $results | Should -Match 'ReallyT3rrible!'
         }
     }
 
-    Context "Should export a specific credential" {
-        $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath
-        $results = Get-Content -Path $filepath
-        $allfiles += $filepath
-
-        It "Should have information" {
-            $results | Should Not Be Null
+    Context "When exporting a specific credential" {
+        BeforeAll {
+            $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
+            $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath
+            $results = Get-Content -Path $filepath
+            $allfiles += $filepath
         }
 
-        It "Should only have one credential" {
-            $results | Should Match 'CaptainAcred'
+        It "Returns content" {
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have the password" {
-            $results | Should Match 'ReallyT3rrible!'
-        }
-    }
-
-    Context "Should export a specific credential and append it to exisiting export" {
-        $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
-        $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_Hulk' -FilePath $filepath -Append
-        $results = Get-Content -Path $filepath
-
-        It "Should have information" {
-            $results | Should Not Be Null
+        It "Contains only the specified credential" {
+            $results | Should -Match 'CaptainAcred'
         }
 
-        It "Should have multiple credential" {
-            $results | Should Match 'Hulk|CaptainA'
-        }
-
-        It "Should have the password" {
-            $results | Should Match 'ReallyT3rrible!'
+        It "Includes the password" {
+            $results | Should -Match 'ReallyT3rrible!'
         }
     }
 
-    Context "Should export a specific credential excluding the password" {
-        $filepath = "$env:USERPROFILE\Documents\temp-credential.sql"
-        $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath -ExcludePassword
-        $results = Get-Content -Path $filepath
-        $allfiles += $filepath
-
-        It "Should have information" {
-            $results | Should Not Be $null
+    Context "When appending a credential export" {
+        BeforeAll {
+            $filepath = "$env:USERPROFILE\Documents\dbatoolsci_credential.sql"
+            $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_Hulk' -FilePath $filepath -Append
+            $results = Get-Content -Path $filepath
         }
 
-        It "Should contain the correct identity (see #7282)" {
-            $results | Should Match "IDENTITY = N'dbatoolsci_CaptainAcredId'"
+        It "Returns content" {
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should not have the password" {
-            $results | Should Not Match 'ReallyT3rrible!'
+        It "Contains both credentials" {
+            $results | Should -Match 'Hulk|CaptainA'
+        }
+
+        It "Includes the password" {
+            $results | Should -Match 'ReallyT3rrible!'
+        }
+    }
+
+    Context "When exporting with excluded password" {
+        BeforeAll {
+            $filepath = "$env:USERPROFILE\Documents\temp-credential.sql"
+            $null = Export-DbaCredential -SqlInstance $TestConfig.instance2 -Identity 'dbatoolsci_CaptainAcredId' -FilePath $filepath -ExcludePassword
+            $results = Get-Content -Path $filepath
+            $allfiles += $filepath
+        }
+
+        It "Returns content" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Contains the correct identity" {
+            $results | Should -Match "IDENTITY = N'dbatoolsci_CaptainAcredId'"
+        }
+
+        It "Does not include the password" {
+            $results | Should -Not -Match 'ReallyT3rrible!'
         }
     }
 }

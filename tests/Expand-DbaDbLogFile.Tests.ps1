@@ -1,47 +1,83 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'TargetLogSize', 'IncrementSize', 'LogFileId', 'ShrinkLogFile', 'ShrinkSize', 'BackupDirectory', 'ExcludeDiskSpaceValidation', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Expand-DbaDbLogFile" -Tag "UnitTests" {
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Expand-DbaDbLogFile
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                'SqlInstance',
+                'SqlCredential',
+                'Database',
+                'ExcludeDatabase',
+                'TargetLogSize',
+                'IncrementSize',
+                'LogFileId',
+                'ShrinkLogFile',
+                'ShrinkSize',
+                'BackupDirectory',
+                'ExcludeDiskSpaceValidation',
+                'EnableException',
+                'Confirm',
+                'WhatIf'
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Expand-DbaDbLogFile" -Tag "IntegrationTests" {
     BeforeAll {
-        $db1Name = "dbatoolsci_expand"
-        $db1 = New-DbaDatabase -SqlInstance $TestConfig.instance1 -Name $db1Name
+        $dbName = "dbatoolsci_expand"
+        $db = New-DbaDatabase -SqlInstance $TestConfig.Instance1 -Name $dbName
     }
+
     AfterAll {
-        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.instance1 -Database $db1Name
+        Remove-DbaDatabase -Confirm:$false -SqlInstance $TestConfig.Instance1 -Database $dbName
     }
 
-    Context "Ensure command functionality" {
-
-        $results = Expand-DbaDbLogFile -SqlInstance $TestConfig.instance1 -Database $db1 -TargetLogSize 128
-
-        It -Skip "Should have correct properties" {
-            $ExpectedProps = 'ComputerName,InstanceName,SqlInstance,Database,ID,Name,LogFileCount,InitialSize,CurrentSize,InitialVLFCount,CurrentVLFCount'.Split(',')
-            ($results[0].PsObject.Properties.Name | Sort-Object) | Should Be ($ExpectedProps | Sort-Object)
+    Context "When expanding database log files" {
+        BeforeAll {
+            $splatExpand = @{
+                SqlInstance = $TestConfig.Instance1
+                Database = $dbName
+                TargetLogSize = 128
+            }
+            $results = Expand-DbaDbLogFile @splatExpand
         }
 
-        It "Should have database name and ID of $db1" {
-            foreach ($result in $results) {
-                $result.Database | Should -Be $db1Name
-                $result.DatabaseID | Should -Be $db1.ID
-            }
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
         }
 
-        It "Should have grown the log file" {
-            foreach ($result in $results) {
-                $result.InitialSize -gt $result.CurrentSize
-            }
+        It "Returns correct data types" {
+            $results | Should -BeOfType System.Management.Automation.PSCustomObject
+        }
+
+        It "Has required properties" {
+            $required = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'ID', 'Name', 
+                       'LogFileCount', 'InitialSize', 'CurrentSize', 'InitialVLFCount', 'CurrentVLFCount'
+            $results[0].PSObject.Properties.Name | Should -Contain $_  -ForEach $required
+        }
+
+        It "Returns correct database name" {
+            $results.Database | Should -Be $dbName
+        }
+
+        It "Successfully expands the log file" {
+            $results.CurrentSize | Should -BeGreaterThan $results.InitialSize
         }
     }
 }
