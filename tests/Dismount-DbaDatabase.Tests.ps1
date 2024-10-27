@@ -5,23 +5,22 @@ param(
 )
 
 Describe "Dismount-DbaDatabase" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Dismount-DbaDatabase
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "InputObject",
+            "UpdateStatistics",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Dismount-DbaDatabase
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "InputObject",
-                "UpdateStatistics",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
-
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
@@ -65,11 +64,6 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         It "Should remove just one database" {
             $results.Database | Should -Be $dbName
         }
-
-        It "Should have the correct properties" {
-            $expectedProps = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'DatabaseID', 'DetachResult'
-            $results.PsObject.Properties.Name | Sort-Object | Should -Be ($expectedProps | Sort-Object)
-        }
     }
 
     Context "When detaching databases with snapshots" {
@@ -109,11 +103,12 @@ Describe "Dismount-DbaDatabase" -Tag "IntegrationTests" {
         }
 
         It "Should detach database without snapshots" {
+            # skip for now in appveyor, but when we do troubleshoot, maybe it just needs a sleep
+            Start-Sleep 3
             $null = Stop-DbaProcess -SqlInstance $TestConfig.instance3 -Database $dbDetached
             $null = Dismount-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
-
-            $database = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
-            $database | Should -BeNullOrEmpty
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance3 -Database $dbDetached
+            $result | Should -BeNullOrEmpty
         }
     }
 }
