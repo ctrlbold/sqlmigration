@@ -10,7 +10,7 @@ Describe "Get-DbaDbDetachedFileInfo" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Path",
             "EnableException"
         )

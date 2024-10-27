@@ -12,7 +12,7 @@ Describe "Get-DbaAgDatabase" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "AvailabilityGroup",
             "Database",
             "InputObject",

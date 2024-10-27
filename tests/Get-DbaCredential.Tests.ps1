@@ -45,8 +45,8 @@ Describe "Get-DbaCredential" -Tag "IntegrationTests" {
 
         # Add user
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { 
-                net user $args[0] $args[1] /add *>&1 
+            $null = Invoke-Command2 -ScriptBlock {
+                net user $args[0] $args[1] /add *>&1
             } -ArgumentList $login, $plaintext -ComputerName $TestConfig.instance2
         }
 
@@ -60,11 +60,11 @@ Describe "Get-DbaCredential" -Tag "IntegrationTests" {
         } catch { }
 
         foreach ($login in $logins) {
-            $null = Invoke-Command2 -ScriptBlock { 
-                net user $args /delete *>&1 
+            $null = Invoke-Command2 -ScriptBlock {
+                net user $args /delete *>&1
             } -ArgumentList $login -ComputerName $TestConfig.instance2
-            $null = Invoke-Command2 -ScriptBlock { 
-                net user $args /delete *>&1 
+            $null = Invoke-Command2 -ScriptBlock {
+                net user $args /delete *>&1
             } -ArgumentList $login -ComputerName $TestConfig.instance2
         }
     }

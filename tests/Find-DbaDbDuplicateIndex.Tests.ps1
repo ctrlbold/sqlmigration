@@ -12,7 +12,7 @@ Describe "Find-DbaDbDuplicateIndex" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "IncludeOverlapping",
             "EnableException"

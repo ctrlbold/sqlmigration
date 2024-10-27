@@ -10,7 +10,7 @@ Describe "Get-DbaAgBackupHistory" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "AvailabilityGroup",
             "Database",
             "ExcludeDatabase",
@@ -20,7 +20,7 @@ Describe "Get-DbaAgBackupHistory" -Tag "UnitTests" {
             "RecoveryFork",
             "Last",
             "LastFull",
-            "LastDiff", 
+            "LastDiff",
             "LastLog",
             "DeviceType",
             "Raw",

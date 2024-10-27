@@ -39,7 +39,7 @@ Describe "Get-DbaDbAsymmetricKey" -Tag "IntegrationTests" {
             $algorithm = 'Rsa4096'
             $dbuser = 'keyowner'
             $database = 'GetAsKey'
-            
+
             $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $database
             $tPassword = ConvertTo-SecureString "ThisIsThePassword1" -AsPlainText -Force
             New-DbaDbMasterKey -SqlInstance $TestConfig.instance2 -Database $database -SecurePassword $tPassword -confirm:$false

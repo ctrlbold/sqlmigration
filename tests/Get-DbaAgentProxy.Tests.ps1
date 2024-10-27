@@ -10,7 +10,7 @@ Describe "Get-DbaAgentProxy" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Proxy",
             "ExcludeProxy",
             "EnableException"

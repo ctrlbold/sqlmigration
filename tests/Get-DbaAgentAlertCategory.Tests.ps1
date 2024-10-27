@@ -10,7 +10,7 @@ Describe "Get-DbaAgentAlertCategory" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Category",
             "EnableException"
         )
@@ -36,7 +36,7 @@ Describe "Get-DbaAgentAlertCategory" -Tag "IntegrationTests" {
         )
         $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categories
     }
-    
+
     AfterAll {
         $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categories -Confirm:$false
     }
@@ -53,7 +53,7 @@ Describe "Get-DbaAgentAlertCategory" -Tag "IntegrationTests" {
 
     Context "When getting a specific alert category" {
         BeforeAll {
-            $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory | 
+            $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory |
                 Where-Object Name -match "dbatoolsci"
         }
 

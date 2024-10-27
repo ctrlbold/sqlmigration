@@ -11,7 +11,7 @@ Describe "Export-DbaScript" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "InputObject",
-                "ScriptingOptionsObject", 
+                "ScriptingOptionsObject",
                 "Path",
                 "FilePath",
                 "Encoding",
@@ -69,8 +69,8 @@ Describe "Export-DbaScript" -Tag "IntegrationTests" {
     Context "When using NoPrefix parameter" {
         BeforeAll {
             $testPath = "C:\temp"
-            if (-not (Test-Path $testPath)) { 
-                $null = New-Item -ItemType Directory -Path $testPath 
+            if (-not (Test-Path $testPath)) {
+                $null = New-Item -ItemType Directory -Path $testPath
             }
             $outputFile = Join-Path $testPath "msdb.txt"
             $table = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1

@@ -12,7 +12,7 @@ Describe "Find-DbaView" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "Pattern",

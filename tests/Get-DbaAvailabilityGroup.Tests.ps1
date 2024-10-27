@@ -10,7 +10,7 @@ Describe "Get-DbaAvailabilityGroup" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "AvailabilityGroup",
             "IsPrimary",
             "EnableException"

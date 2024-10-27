@@ -12,7 +12,7 @@ Describe "Get-DbaBinaryFileTable" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "Table",
             "Schema",
@@ -37,7 +37,7 @@ Describe "Get-DbaBinaryFileTable" -Tag "IntegrationTests" {
     BeforeAll {
         $database = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $null = $database.Query("CREATE TABLE [dbo].[BunchOFilez]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
-        
+
         # Import test files
         $null = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez -FilePath "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
         $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table BunchOFilez

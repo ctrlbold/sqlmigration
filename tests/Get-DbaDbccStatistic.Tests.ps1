@@ -12,7 +12,7 @@ Describe "Get-DbaDbccStatistic" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "Object",
             "Target",

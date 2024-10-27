@@ -12,7 +12,7 @@ Describe "Get-DbaCpuRingBuffer" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "CollectionMinutes",
             "EnableException"
         )

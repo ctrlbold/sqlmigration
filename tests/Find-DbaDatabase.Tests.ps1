@@ -11,7 +11,7 @@ Describe "Find-DbaDatabase" -Tag "UnitTests" {
         $command = Get-Command Find-DbaDatabase
         $knownParameters = @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Property",
             "Pattern",
             "Exact",
@@ -26,7 +26,7 @@ Describe "Find-DbaDatabase" -Tag "UnitTests" {
         }
 
         It "Should have exactly the number of parameters ($($knownParameters.Count))" {
-            $params = $command.Parameters.Values.Name 
+            $params = $command.Parameters.Values.Name
             Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }

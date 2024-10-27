@@ -12,7 +12,7 @@ Describe "Get-DbaAgentOperator" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Operator",
             "ExcludeOperator",
             "EnableException"

@@ -12,7 +12,7 @@ Describe "Get-DbaDbccHelp" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Statement",
             "IncludeUndocumented",
             "EnableException"

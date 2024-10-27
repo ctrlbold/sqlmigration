@@ -11,7 +11,7 @@ Describe "Get-DbaAgentJobOutputFile" -Tag "UnitTests" {
         $command = Get-Command Get-DbaAgentJobOutputFile
         $knownParameters = @(
             'SqlInstance',
-            'SqlCredential', 
+            'SqlCredential',
             'Job',
             'ExcludeJob',
             'EnableException'

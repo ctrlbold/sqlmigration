@@ -40,7 +40,7 @@ Describe "Get-DbaAgentJob" -Tag "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
-        
+
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
@@ -61,7 +61,7 @@ Describe "Get-DbaAgentJob" -Tag "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
-        
+
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
@@ -77,7 +77,7 @@ Describe "Get-DbaAgentJob" -Tag "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_disabled -Disabled
         }
-        
+
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob, dbatoolsci_testjob_disabled -Confirm:$false
         }
@@ -95,7 +95,7 @@ Describe "Get-DbaAgentJob" -Tag "IntegrationTests" {
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1 -Category 'Cat1'
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat2 -Category 'Cat2'
         }
-        
+
         AfterAll {
             $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'Cat1', 'Cat2' -Confirm:$false
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_testjob_cat1, dbatoolsci_testjob_cat2 -Confirm:$false
@@ -111,7 +111,7 @@ Describe "Get-DbaAgentJob" -Tag "IntegrationTests" {
         BeforeAll {
             $jobName1 = "dbatoolsci_dbfilter_$(Get-Random)"
             $jobName2 = "dbatoolsci_dbfilter_$(Get-Random)"
-            
+
             $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1 -Disabled
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName1 -StepName "TSQL-x" -Subsystem TransactSql -Database "msdb"
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName1 -StepName "TSQL-y" -Subsystem TransactSql -Database "tempdb"
@@ -122,7 +122,7 @@ Describe "Get-DbaAgentJob" -Tag "IntegrationTests" {
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName2 -StepName "TSQL-y" -Subsystem TransactSql -Database "model"
             $null = New-DbaAgentJobStep -SqlInstance $TestConfig.instance2 -Job $jobName2 -StepName "TSQL-z" -Subsystem TransactSql -Database "master"
         }
-        
+
         AfterAll {
             $null = Remove-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job $jobName1, $jobName2 -Confirm:$false
         }

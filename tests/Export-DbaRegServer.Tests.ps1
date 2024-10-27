@@ -11,7 +11,7 @@ Describe "Export-DbaRegServer" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "InputObject",
                 "Path",
                 "FilePath",
@@ -62,7 +62,7 @@ Describe "Export-DbaRegServer" -Tag "IntegrationTests" {
 
         $group1 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name "dbatoolsci-group1"
         $group2 = Add-DbaRegServerGroup -SqlInstance $TestConfig.instance2 -Name "dbatoolsci-group2"
-        
+
         $server1 = Add-DbaRegServer @splatServer1
         $server2 = Add-DbaRegServer @splatServer2
         $server3 = Add-DbaRegServer @splatServer3
@@ -71,7 +71,7 @@ Describe "Export-DbaRegServer" -Tag "IntegrationTests" {
     AfterAll {
         Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
         Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
-        
+
         if (Test-Path $newDirectory) {
             Remove-Item $newDirectory -Recurse -Force
         }
@@ -95,7 +95,7 @@ Describe "Export-DbaRegServer" -Tag "IntegrationTests" {
             $exportPath = $server3 | Export-DbaRegServer -Path C:\temp
             Get-DbaRegServer -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServer -Confirm:$false
             Get-DbaRegServerGroup -SqlInstance $TestConfig.instance2 | Where-Object Name -Match dbatoolsci | Remove-DbaRegServerGroup -Confirm:$false
-            
+
             $importedServer = Import-DbaRegServer -SqlInstance $TestConfig.instance2 -Path $exportPath
             $importedServer.ServerName | Should -Be $splatServer3.ServerName
             $importedServer.Description | Should -Be $splatServer3.Description

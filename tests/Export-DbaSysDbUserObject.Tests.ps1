@@ -45,7 +45,7 @@ Describe "Export-DbaSysDbUserObject" -Tag "IntegrationTests" {
         $tableFunctionName = "[dbatoolsci_TableFunction_$random]"
         $scalarFunctionName = "[dbatoolsci_ScalarFunction_$random]"
         $ruleName = "[dbatoolsci_Rule_$random]"
-        
+
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
         $server.query("CREATE TABLE dbo.$tableName (Col1 int);", "master")
         $server.query("CREATE VIEW dbo.$viewName AS SELECT 1 as Col1;", "master")

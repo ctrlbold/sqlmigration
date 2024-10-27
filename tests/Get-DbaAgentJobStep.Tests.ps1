@@ -10,7 +10,7 @@ Describe "Get-DbaAgentJobStep" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Job",
             "ExcludeJob",
             "ExcludeDisabledJobs",
@@ -37,7 +37,7 @@ Describe "Get-DbaAgentJobStep" -Tag "IntegrationTests" {
         $null = New-DbaAgentJob -SqlInstance $TestConfig.Instance2 -Job $jobName
         $null = New-DbaAgentJobStep -SqlInstance $TestConfig.Instance2 -Job $jobName -StepName dbatoolsci_jobstep1 -Subsystem TransactSql -Command 'select 1'
     }
-    
+
     AfterAll {
         $null = Remove-DbaAgentJob -SqlInstance $TestConfig.Instance2 -Job $jobName -Confirm:$false
     }

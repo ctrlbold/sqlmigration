@@ -10,7 +10,7 @@ Describe "Export-DbaXESession" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "InputObject",
             "Session",
             "Path",
@@ -42,7 +42,7 @@ Describe "Export-DbaXESession" -Tag "IntegrationTests" {
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile = "$AltExportPath\Dbatoolsci_XE_CustomFile.sql"
     }
-    
+
     AfterAll {
         Get-ChildItem $outputFile -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
     }
@@ -77,7 +77,7 @@ Describe "Export-DbaXESession" -Tag "IntegrationTests" {
 
     Context "When using pipeline input" {
         BeforeAll {
-            $null = Get-DbaXESession -SqlInstance $TestConfig.Instance2 -Session system_health | 
+            $null = Get-DbaXESession -SqlInstance $TestConfig.Instance2 -Session system_health |
                 Export-DbaXESession -FilePath $outputFile
         }
 

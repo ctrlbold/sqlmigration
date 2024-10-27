@@ -37,7 +37,7 @@ Describe "Get-DbaDbCertificate" -Tag "IntegrationTests" {
         BeforeAll {
             $masterKey = $null
             $tempdbMasterKey = $null
-            
+
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
                 $masterKey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }

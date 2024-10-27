@@ -13,7 +13,7 @@ Describe "Get-DbaDbCheckConstraint" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "ExcludeSystemTable",

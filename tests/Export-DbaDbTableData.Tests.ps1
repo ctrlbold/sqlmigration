@@ -59,7 +59,7 @@ Describe "Export-DbaDbTableData" -Tags "IntegrationTests" {
         BeforeAll {
             $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
             $secondEscaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.Instance1 -Database tempdb -Table dbatoolsci_example | 
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.Instance1 -Database tempdb -Table dbatoolsci_example |
                 Export-DbaDbTableData -Passthru
         }
 
@@ -72,7 +72,7 @@ Describe "Export-DbaDbTableData" -Tags "IntegrationTests" {
         BeforeAll {
             $escaped = [regex]::escape('INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)')
             $secondEscaped = [regex]::escape('INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],')
-            $results = Get-DbaDbTable -SqlInstance $TestConfig.Instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp | 
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.Instance1 -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp |
                 Export-DbaDbTableData -Passthru
         }
 

@@ -39,26 +39,26 @@ Describe "Find-DbaBackup" -Tag "IntegrationTests" {
 
     Context "Path validation" {
         It "Throws when path is invalid" {
-            { Find-DbaBackup -Path 'funnypath' -BackupFileExtension 'bak' -RetentionPeriod '0d' -EnableException } | 
+            { Find-DbaBackup -Path 'funnypath' -BackupFileExtension 'bak' -RetentionPeriod '0d' -EnableException } |
                 Should -Throw "not found"
         }
     }
 
     Context "RetentionPeriod validation" {
         It "Throws when retention period format is invalid" {
-            { Find-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod 'ad' -EnableException } | 
+            { Find-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod 'ad' -EnableException } |
                 Should -Throw "format invalid"
         }
 
         It "Throws when retention period units are invalid" {
-            { Find-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '11y' -EnableException } | 
+            { Find-DbaBackup -Path $testPath -BackupFileExtension 'bak' -RetentionPeriod '11y' -EnableException } |
                 Should -Throw "units invalid"
         }
     }
 
     Context "BackupFileExtension validation" {
         It "Does not throw with valid extension" {
-            { Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException -WarningAction SilentlyContinue } | 
+            { Find-DbaBackup -Path $testPath -BackupFileExtension '.bak' -RetentionPeriod '0d' -EnableException -WarningAction SilentlyContinue } |
                 Should -Not -Throw
         }
 

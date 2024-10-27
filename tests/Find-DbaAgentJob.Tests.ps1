@@ -16,7 +16,7 @@ Describe "Find-DbaAgentJob" -Tag "UnitTests" {
             'StepName',
             'LastUsed',
             'IsDisabled',
-            'IsFailed', 
+            'IsFailed',
             'IsNotScheduled',
             'IsNoEmailNotification',
             'Category',
@@ -42,7 +42,7 @@ Describe "Find-DbaAgentJob" -Tags "IntegrationTests" {
     Context "Command finds jobs using all parameters" {
         BeforeAll {
             $srvName = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Query "select @@servername as sn" -as PSObject
-            
+
             # Create test job
             $splatJob = @{
                 SqlInstance = $TestConfig.instance2

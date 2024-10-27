@@ -10,7 +10,7 @@ Describe "Find-DbaOrphanedFile" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             'SqlInstance',
-            'SqlCredential', 
+            'SqlCredential',
             'Path',
             'FileType',
             'LocalOnly',

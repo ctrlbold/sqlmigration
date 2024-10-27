@@ -43,7 +43,7 @@ Describe "Export-DbaBinaryFile" -Tag "IntegrationTests" {
         $testDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database tempdb
         $testTable = "BunchOFilezz"
         $exportPath = "C:\temp\exports"
-        
+
         $null = $testDb.Query("CREATE TABLE [dbo].[$testTable]([FileName123] [nvarchar](50) NULL, [TheFile123] [image] NULL)")
         $null = Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table $testTable -FilePath "$($TestConfig.appveyorlabrepo)\azure\adalsql.msi"
         $null = Get-ChildItem "$($TestConfig.appveyorlabrepo)\certificates" | Import-DbaBinaryFile -SqlInstance $TestConfig.instance2 -Database tempdb -Table $testTable
@@ -71,7 +71,7 @@ Describe "Export-DbaBinaryFile" -Tag "IntegrationTests" {
 
     Context "When exporting binary files through pipeline" {
         BeforeAll {
-            $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb | 
+            $results = Get-DbaBinaryFileTable -SqlInstance $TestConfig.instance2 -Database tempdb |
                 Export-DbaBinaryFile -Path $exportPath
         }
 

@@ -10,7 +10,7 @@ Describe "Get-DbaDbccSessionBuffer" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Operation",
             "SessionId",
             "RequestId",

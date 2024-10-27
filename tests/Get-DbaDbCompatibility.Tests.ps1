@@ -10,7 +10,7 @@ Describe "Get-DbaDbCompatibility" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "InputObject",
             "EnableException"

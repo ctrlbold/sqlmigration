@@ -34,7 +34,7 @@ Describe "Find-DbaUserObject" -Tag "IntegrationTests" {
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_userObject' -Owner 'sa'
             $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2 -Pattern sa
         }
-        
+
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_userObject' -Confirm:$false
         }

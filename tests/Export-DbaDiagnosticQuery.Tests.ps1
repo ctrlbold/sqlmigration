@@ -43,7 +43,7 @@ Describe "Export-DbaDiagnosticQuery" -Tag "IntegrationTests" {
 
     Context "When exporting diagnostic query results" {
         BeforeAll {
-            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.Instance2 -QueryName "Memory Clerk Usage" | 
+            $null = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.Instance2 -QueryName "Memory Clerk Usage" |
                 Export-DbaDiagnosticQuery -Path $testPath
         }
 

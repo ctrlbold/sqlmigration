@@ -10,7 +10,7 @@ Describe "Find-DbaDbDisabledIndex" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Database",
             "ExcludeDatabase",
             "NoClobber",

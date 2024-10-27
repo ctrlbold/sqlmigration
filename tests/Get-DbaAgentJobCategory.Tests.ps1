@@ -12,7 +12,7 @@ Describe "Get-DbaAgentJobCategory" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Category",
             "CategoryType",
             "EnableException"

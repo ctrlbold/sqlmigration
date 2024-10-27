@@ -35,7 +35,7 @@ Describe "Get-DbaComputerSystem" -Tag "UnitTests" {
         }
 
         It "Throws when hostname cannot be resolved" {
-            { Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null } | 
+            { Get-DbaComputerSystem -ComputerName 'DoesNotExist142' -WarningAction Stop 3> $null } |
                 Should -Throw
         }
     }

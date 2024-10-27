@@ -11,7 +11,7 @@ Describe "Get-DbaAgListener" -Tag "UnitTests" {
         $command = Get-Command Get-DbaAgListener
         $knownParameters = @(
             'SqlInstance',
-            'SqlCredential', 
+            'SqlCredential',
             'AvailabilityGroup',
             'Listener',
             'InputObject',
