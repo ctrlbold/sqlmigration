@@ -79,12 +79,12 @@ $ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
 
 # Splat with purpose suffix
 $splatPrimary = @{
-    Primary = $TestConfig.instance3
-    Name = $primaryAgName
-    ClusterType = "None"
-    FailoverMode = "Manual"
-    Certificate = "dbatoolsci_AGCert"
-    Confirm = $false
+    Primary         = $TestConfig.instance3
+    Name            = $primaryAgName
+    ClusterType     = "None"
+    FailoverMode    = "Manual"
+    Certificate     = "dbatoolsci_AGCert"
+    Confirm         = $false
 }
 $primaryAg = New-DbaAvailabilityGroup @splatPrimary
 ```
@@ -100,7 +100,7 @@ Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
         $primaryAgName = "dbatoolsci_agroup"
         $splatPrimary = @{
             Primary = $TestConfig.instance3
-            Name = $primaryAgName
+            Name    = $primaryAgName
             ...
         }
         $ag = New-DbaAvailabilityGroup @splatPrimary
