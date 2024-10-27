@@ -1,32 +1,57 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Name', 'Database'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaDbAssembly" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbAssembly
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "Name",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Gets the Db Assembly" {
-        $results = Get-DbaDbAssembly -SqlInstance $TestConfig.instance2 | Where-Object { $_.parent.name -eq 'master' }
-        $masterDb = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master
-        It "Gets results" {
-            $results | Should Not Be $Null
+Describe "Get-DbaDbAssembly" -Tag "IntegrationTests" {
+    Context "When getting assemblies from master database" {
+        BeforeAll {
+            $instance = $TestConfig.instance2
+            $masterDb = Get-DbaDatabase -SqlInstance $instance -Database master
+            $results = Get-DbaDbAssembly -SqlInstance $instance | Where-Object { $PSItem.parent.name -eq 'master' }
+        }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
             $results.DatabaseId | Should -Be $masterDb.Id
         }
+
         It "Should have a name of Microsoft.SqlServer.Types" {
-            $results.name | Should Be "Microsoft.SqlServer.Types"
+            $results.name | Should -Be "Microsoft.SqlServer.Types"
         }
+
         It "Should have an owner of sys" {
-            $results.owner | Should Be "sys"
+            $results.owner | Should -Be "sys"
         }
+
         It "Should have a version matching the instance" {
             $results.Version | Should -Be $masterDb.assemblies.Version
         }

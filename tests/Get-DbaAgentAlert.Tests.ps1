@@ -1,31 +1,47 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException', 'Alert', 'ExcludeAlert'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaAgentAlert" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaAgentAlert
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Alert",
+            "ExcludeAlert",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaAgentAlert" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
         $server.Query("EXEC msdb.dbo.sp_add_alert @name=N'dbatoolsci test alert',@message_id=0,@severity=6,@enabled=1,@delay_between_responses=0,@include_event_description_in=0,@category_name=N'[Uncategorized]',@job_id=N'00000000-0000-0000-0000-000000000000'")
+        $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -Database master
         $server.Query("EXEC msdb.dbo.sp_delete_alert @name=N'dbatoolsci test alert'")
     }
 
-    $results = Get-DbaAgentAlert -SqlInstance $TestConfig.instance2
-    It "gets the newly created alert" {
-        $results.Name -contains 'dbatoolsci test alert'
+    It "Gets the newly created alert" {
+        $results.Name | Should -Contain 'dbatoolsci test alert'
     }
 }
-

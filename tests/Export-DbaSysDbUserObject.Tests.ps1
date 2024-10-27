@@ -1,19 +1,41 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'IncludeDependencies', 'BatchSeparator', 'Path', 'FilePath', 'NoPrefix', 'ScriptingOptionsObject', 'NoClobber', 'PassThru', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaSysDbUserObject" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Export-DbaSysDbUserObject
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            'SqlInstance',
+            'SqlCredential',
+            'IncludeDependencies',
+            'BatchSeparator',
+            'Path',
+            'FilePath',
+            'NoPrefix',
+            'ScriptingOptionsObject',
+            'NoClobber',
+            'PassThru',
+            'EnableException'
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaSysDbUserObject" -Tag "IntegrationTests" {
     BeforeAll {
         $random = Get-Random
         $tableName = "dbatoolsci_UserTable_$random"
@@ -23,6 +45,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $tableFunctionName = "[dbatoolsci_TableFunction_$random]"
         $scalarFunctionName = "[dbatoolsci_ScalarFunction_$random]"
         $ruleName = "[dbatoolsci_Rule_$random]"
+        
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
         $server.query("CREATE TABLE dbo.$tableName (Col1 int);", "master")
         $server.query("CREATE VIEW dbo.$viewName AS SELECT 1 as Col1;", "master")
@@ -32,6 +55,7 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query("CREATE FUNCTION dbo.$scalarFunctionName (@int int) RETURNS INT AS BEGIN RETURN @int END", "master")
         $server.query("CREATE RULE dbo.$ruleName AS @range>= 1 AND @range <10;", "master")
     }
+
     AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2 -SqlCredential $SqlCredential
         $server.query("DROP TABLE dbo.$tableName", "master")
@@ -42,54 +66,61 @@ Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
         $server.query("DROP FUNCTION dbo.$scalarFunctionName", "master")
         $server.query("DROP RULE dbo.$ruleName", "master")
     }
-    Context "works as expected with passthru" {
-        $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -PassThru | Out-String
-        It "should export text matching table name '$tableName'" {
-            $script -match $tableName | Should be $true
+
+    Context "When using PassThru parameter" {
+        BeforeAll {
+            $script = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -PassThru | Out-String
         }
-        It "should export text matching view name '$viewName'" {
-            $script -match $viewName | Should be $true
+
+        It "Should export text matching table name '$tableName'" {
+            $script -match $tableName | Should -Be $true
         }
-        It "should export text matching stored procedure name '$procName'" {
-            $script -match $procName | Should be $true
+        It "Should export text matching view name '$viewName'" {
+            $script -match $viewName | Should -Be $true
         }
-        It "should export text matching trigger name '$triggerName'" {
-            $script -match $triggerName | Should be $true
+        It "Should export text matching stored procedure name '$procName'" {
+            $script -match $procName | Should -Be $true
         }
-        It "should export text matching table function name '$tableFunctionName'" {
-            $script -match $tableFunctionName | Should be $true
+        It "Should export text matching trigger name '$triggerName'" {
+            $script -match $triggerName | Should -Be $true
         }
-        It "should export text matching scalar function name '$scalarFunctionName'" {
-            $script -match $scalarFunctionName | Should be $true
+        It "Should export text matching table function name '$tableFunctionName'" {
+            $script -match $tableFunctionName | Should -Be $true
         }
-        It "should export text matching rule name '$ruleName'" {
-            $script -match $ruleName | Should be $true
+        It "Should export text matching scalar function name '$scalarFunctionName'" {
+            $script -match $scalarFunctionName | Should -Be $true
+        }
+        It "Should export text matching rule name '$ruleName'" {
+            $script -match $ruleName | Should -Be $true
         }
     }
 
-    Context "works as expected with filename" {
-        $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath "C:\Temp\objects_$random.sql"
-        $file = get-content "C:\Temp\objects_$random.sql" | Out-String
-        It "should export text matching table name '$tableName'" {
-            $file -match $tableName | Should be $true
+    Context "When using FilePath parameter" {
+        BeforeAll {
+            $null = Export-DbaSysDbUserObject -SqlInstance $TestConfig.instance2 -FilePath "C:\Temp\objects_$random.sql"
+            $file = Get-Content "C:\Temp\objects_$random.sql" | Out-String
         }
-        It "should export text matching view name '$viewName'" {
-            $file -match $viewName | Should be $true
+
+        It "Should export text matching table name '$tableName'" {
+            $file -match $tableName | Should -Be $true
         }
-        It "should export text matching stored procedure name '$procName'" {
-            $file -match $procName | Should be $true
+        It "Should export text matching view name '$viewName'" {
+            $file -match $viewName | Should -Be $true
         }
-        It "should export text matching trigger name '$triggerName'" {
-            $file -match $triggerName | Should be $true
+        It "Should export text matching stored procedure name '$procName'" {
+            $file -match $procName | Should -Be $true
         }
-        It "should export text matching table function name '$tableFunctionName'" {
-            $file -match $tableFunctionName | Should be $true
+        It "Should export text matching trigger name '$triggerName'" {
+            $file -match $triggerName | Should -Be $true
         }
-        It "should export text matching scalar function name '$scalarFunctionName'" {
-            $file -match $scalarFunctionName | Should be $true
+        It "Should export text matching table function name '$tableFunctionName'" {
+            $file -match $tableFunctionName | Should -Be $true
         }
-        It "should export text matching scalar function name '$ruleName'" {
-            $file -match $ruleName | Should be $true
+        It "Should export text matching scalar function name '$scalarFunctionName'" {
+            $file -match $scalarFunctionName | Should -Be $true
+        }
+        It "Should export text matching rule name '$ruleName'" {
+            $file -match $ruleName | Should -Be $true
         }
     }
 }

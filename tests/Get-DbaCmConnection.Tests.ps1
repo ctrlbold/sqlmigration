@@ -1,35 +1,58 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ComputerName', 'UserName', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaCmConnection" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaCmConnection
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "ComputerName",
+            "UserName",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaCmConnection" -Tag "IntegrationTests" {
     BeforeAll {
         New-DbaCmConnection -ComputerName $env:COMPUTERNAME
     }
+
     AfterAll {
-        Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME -Confirm:$False
+        Remove-DbaCmConnection -ComputerName $env:COMPUTERNAME -Confirm:$false
     }
-    Context "Returns DbaCmConnection" {
-        $Results = Get-DbaCMConnection -ComputerName $env:COMPUTERNAME
-        It "Results are not Empty" {
-            $Results | should not be $null
+
+    Context "When getting connection for computer name" {
+        BeforeAll {
+            $results = Get-DbaCMConnection -ComputerName $env:COMPUTERNAME
+        }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
-    Context "Returns DbaCmConnection for User" {
-        $Results = Get-DbaCMConnection -ComputerName $env:COMPUTERNAME -UserName *
-        It "Results are not Empty" {
-            $Results | should not be $null
+
+    Context "When getting connection for username" {
+        BeforeAll {
+            $results = Get-DbaCMConnection -ComputerName $env:COMPUTERNAME -UserName *
+        }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

@@ -1,35 +1,69 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$commandname Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'IsPrimary', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaAvailabilityGroup" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaAvailabilityGroup
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "AvailabilityGroup",
+            "IsPrimary",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaAvailabilityGroup" -Tag "IntegrationTests" {
     BeforeAll {
-        $agname = "dbatoolsci_agroup"
-        $null = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Confirm:$false -Certificate dbatoolsci_AGCert
+        $primaryAgName = "dbatoolsci_agroup"
+        $splatPrimary = @{
+            Primary = $TestConfig.instance3
+            Name = $primaryAgName
+            ClusterType = "None"
+            FailoverMode = "Manual"
+            Certificate = "dbatoolsci_AGCert"
+            Confirm = $false
+        }
+        $null = New-DbaAvailabilityGroup @splatPrimary
     }
+
     AfterAll {
-        Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
+        $splatRemove = @{
+            SqlInstance = $TestConfig.instance3
+            AvailabilityGroup = $primaryAgName
+            Confirm = $false
+        }
+        Remove-DbaAvailabilityGroup @splatRemove
     }
-    Context "gets ags" {
-        It "returns results with proper data" {
+
+    Context "When getting availability groups" {
+        BeforeAll {
             $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3
-            $results.AvailabilityGroup | Should -Contain $agname
         }
 
-        It "returns a single result" {
-            $results = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname
-            $results.AvailabilityGroup | Should -Be $agname
+        It "Returns results with proper data" {
+            $results.AvailabilityGroup | Should -Contain $primaryAgName
+        }
+
+        It "Returns a single result when filtering by AG name" {
+            $filtered = Get-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $primaryAgName
+            $filtered.AvailabilityGroup | Should -Be $primaryAgName
         }
     }
 } #$TestConfig.instance2 for appveyor

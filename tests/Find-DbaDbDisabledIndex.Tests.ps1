@@ -1,19 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'NoClobber', 'Append', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Find-DbaDbDisabledIndex" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Find-DbaDbDisabledIndex
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "ExcludeDatabase",
+            "NoClobber",
+            "Append",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Find-DbaDbDisabledIndex" -Tag "IntegrationTests" {
     Context "Command actually works" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
@@ -30,22 +50,25 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             $null = $db1.Query($sql)
             $null = $db2.Query($sql)
         }
+
         AfterAll {
             $db1, $db2 | Remove-DbaDatabase -Confirm:$false
         }
 
-        It "Should find disabled index: $indexName" {
+        It "Should find disabled index: <indexName> across all databases" {
             $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.instance1
-            ($results | Where-Object { $_.IndexName -eq $indexName }).Count | Should -Be 2
-            ($results | Where-Object { $_.DatabaseName -in $databaseName1, $databaseName2 }).Count | Should -Be 2
-            ($results | Where-Object { $_.DatabaseId -in $db1.Id, $db2.Id }).Count | Should -Be 2
+            ($results | Where-Object { $PSItem.IndexName -eq $indexName }).Count | Should -Be 2
+            ($results | Where-Object { $PSItem.DatabaseName -in $databaseName1, $databaseName2 }).Count | Should -Be 2
+            ($results | Where-Object { $PSItem.DatabaseId -in $db1.Id, $db2.Id }).Count | Should -Be 2
         }
-        It "Should find disabled index: $indexName for specific database" {
+
+        It "Should find disabled index: <indexName> for specific database" {
             $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.instance1 -Database $databaseName1
             $results.IndexName | Should -Be $indexName
             $results.DatabaseName | Should -Be $databaseName1
             $results.DatabaseId | Should -Be $db1.Id
         }
+
         It "Should exclude specific database" {
             $results = Find-DbaDbDisabledIndex -SqlInstance $TestConfig.instance1 -ExcludeDatabase $databaseName1
             $results.IndexName | Should -Be $indexName

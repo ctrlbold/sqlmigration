@@ -1,31 +1,54 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Session', 'Path', 'FilePath', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaXESessionTemplate" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Export-DbaXESessionTemplate
+        $expectedParams = $TestConfig.CommonParameters
+        $expectedParams += @(
+            'SqlInstance',
+            'SqlCredential', 
+            'Session',
+            'Path',
+            'FilePath',
+            'InputObject',
+            'EnableException'
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expectedParams {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expectedParams.Count))" {
+            $hasParams = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expectedParams -DifferenceObject $hasParams | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaXESessionTemplate" -Tag "IntegrationTests" {
     BeforeAll {
         $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
     }
+    
     AfterAll {
         $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
         Remove-Item -Path 'C:\windows\temp\Profiler TSQL Duration.xml' -ErrorAction SilentlyContinue
     }
-    Context "Test Importing Session Template" {
-        $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template 'Profiler TSQL Duration'
-        $results = $session | Export-DbaXESessionTemplate -Path C:\windows\temp
-        It "session exports to disk" {
-            $results.Name | Should Be 'Profiler TSQL Duration.xml'
+    
+    Context "When exporting session template" {
+        BeforeAll {
+            $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template 'Profiler TSQL Duration'
+            $results = $session | Export-DbaXESessionTemplate -Path C:\windows\temp
+        }
+
+        It "Should export session to disk with correct name" {
+            $results.Name | Should -Be 'Profiler TSQL Duration.xml'
         }
     }
 }

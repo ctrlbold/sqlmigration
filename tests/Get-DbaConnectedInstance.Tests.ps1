@@ -1,23 +1,38 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        # fake tests, no parameters to validate
-        It "Should only contain our specific parameters" {
-            $null | Should -BeNullOrEmpty
+Describe "Get-DbaConnectedInstance" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaConnectedInstance
+        $expected = $TestConfig.CommonParameters
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaConnectedInstance" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = Get-DbaDatabase -SqlInstance $TestConfig.instance1
+        $null = Get-DbaDatabase -SqlInstance $TestConfig.Instance1
     }
-    Context "gets connected objects" {
-        It "returns some results" {
+
+    Context "When getting connected instances" {
+        BeforeAll {
             $results = Get-DbaConnectedInstance
+        }
+
+        It "Returns results" {
             $results | Should -Not -BeNullOrEmpty
         }
     }

@@ -1,43 +1,66 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaCustomError" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaCustomError
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaCustomError" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sql = "EXEC msdb.dbo.sp_addmessage 54321, 9, N'Dbatools is Awesome!';"
         $server.Query($sql)
     }
-    Afterall {
+
+    AfterAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sql = "EXEC msdb.dbo.sp_dropmessage 54321;"
         $server.Query($sql)
     }
 
-    Context "Gets the backup devices" {
-        $results = Get-DbaCustomError -SqlInstance $TestConfig.instance1
-        It "Results are not empty" {
-            $results | Should Not Be $Null
+    Context "Gets the custom errors" {
+        BeforeAll {
+            $results = Get-DbaCustomError -SqlInstance $TestConfig.instance1
         }
-        It "Should have the name Custom Error Text" {
-            $results.Text | Should Be "Dbatools is Awesome!"
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
         }
-        It "Should have a LanguageID" {
-            $results.LanguageID | Should Be 1033
+
+        It "Returns correct custom error text" {
+            $results.Text | Should -Be "Dbatools is Awesome!"
         }
-        It "Should have a Custom Error ID" {
-            $results.ID | Should Be 54321
+
+        It "Returns correct language ID" {
+            $results.LanguageID | Should -Be 1033
+        }
+
+        It "Returns correct custom error ID" {
+            $results.ID | Should -Be 54321
         }
     }
 }

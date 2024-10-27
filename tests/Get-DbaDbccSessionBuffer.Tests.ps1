@@ -1,69 +1,95 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Operation', 'SessionId', 'RequestId', 'All', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaDbccSessionBuffer" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbccSessionBuffer
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Operation",
+            "SessionId",
+            "RequestId",
+            "All",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
+
+Describe "Get-DbaDbccSessionBuffer" -Tag "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
         $queryResult = $db.Query('SELECT top 10 object_id, @@Spid as MySpid FROM sys.objects')
     }
-    AfterAll {
-    }
 
-    Context "Validate standard output for all databases " {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SessionId', 'EventType', 'Parameters', 'EventInfo'
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -All
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+    Context "When getting session buffers for all databases" {
+        BeforeAll {
+            $inputProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'SessionId',
+                'EventType',
+                'Parameters',
+                'EventInfo'
+            )
+            $outputProps = @(
+                'ComputerName',
+                'InstanceName',
+                'SqlInstance',
+                'SessionId',
+                'Buffer',
+                'HexBuffer'
+            )
+            $resultInput = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -All
+            $resultOutput = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -All
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+        It "Returns results for InputBuffer" {
+            $resultInput.Count | Should -BeGreaterThan 0
         }
 
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'SessionId', 'Buffer', 'HexBuffer'
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -All
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+        It "Has property <_> for InputBuffer" -ForEach $inputProps {
+            $resultInput[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-
-        }
-    }
-
-    Context "Validate returns results for SessionId " {
-        $spid = $queryResult[0].MySpid
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -SessionId $spid
-
-        It "returns results for InputBuffer" {
-            $result.SessionId -eq $spid | Should Be $true
+        It "Returns results for OutputBuffer" {
+            $resultOutput.Count | Should -BeGreaterThan 0
         }
 
-        $result = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -SessionId $spid
-
-        It "returns results for OutputBuffer" {
-            $result.SessionId -eq $spid | Should Be $true
+        It "Has property <_> for OutputBuffer" -ForEach $outputProps {
+            $resultOutput[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
     }
 
+    Context "When getting session buffers for specific SessionId" {
+        BeforeAll {
+            $spid = $queryResult[0].MySpid
+            $resultInput = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -SessionId $spid
+            $resultOutput = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -SessionId $spid
+        }
+
+        It "Returns correct SessionId for InputBuffer" {
+            $resultInput.SessionId | Should -Be $spid
+        }
+
+        It "Returns correct SessionId for OutputBuffer" {
+            $resultOutput.SessionId | Should -Be $spid
+        }
+    }
 }

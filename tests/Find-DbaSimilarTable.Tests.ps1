@@ -1,41 +1,65 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'SchemaName', 'TableName', 'ExcludeViews', 'IncludeSystemDatabases', 'MatchPercentThreshold', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Find-DbaSimilarTable" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Find-DbaSimilarTable
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            'SqlInstance',
+            'SqlCredential',
+            'Database',
+            'ExcludeDatabase',
+            'SchemaName',
+            'TableName',
+            'ExcludeViews',
+            'IncludeSystemDatabases',
+            'MatchPercentThreshold',
+            'EnableException'
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Testing if similar tables are discovered" {
+Describe "Find-DbaSimilarTable" -Tag "IntegrationTests" {
+    BeforeAll {
+        $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
+        $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
+    }
+
+    AfterAll {
+        $db.Query("DROP TABLE dbatoolsci_table1")
+        $db.Query("DROP TABLE dbatoolsci_table2")
+    }
+
+    Context "When finding similar tables" {
         BeforeAll {
-            $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
-            $db.Query("CREATE TABLE dbatoolsci_table1 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
-            $db.Query("CREATE TABLE dbatoolsci_table2 (id int identity, fname varchar(20), lname char(5), lol bigint, whatever datetime)")
-        }
-        AfterAll {
-            $db.Query("DROP TABLE dbatoolsci_table1")
-            $db.Query("DROP TABLE dbatoolsci_table2")
+            $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
         }
 
-        $results = Find-DbaSimilarTable -SqlInstance $TestConfig.instance1 -Database tempdb | Where-Object Table -Match dbatoolsci
-
-        It "returns at least two rows" { # not an exact count because who knows
-            $results.Count -ge 2 | Should Be $true
+        It "Returns at least two matching tables" {
+            $results.Count | Should -BeGreaterOrEqual 2
             $results.OriginalDatabaseId | Should -Be $db.ID, $db.ID
             $results.MatchingDatabaseId | Should -Be $db.ID, $db.ID
         }
 
-        foreach ($result in $results) {
-            It "matches 100% for the test tables" {
-                $result.MatchPercent -eq 100 | Should Be $true
+        It "Shows 100% match for identical test tables" {
+            $results | ForEach-Object {
+                $PSItem.MatchPercent | Should -Be 100
             }
         }
     }

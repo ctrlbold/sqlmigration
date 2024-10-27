@@ -1,46 +1,69 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaDbCompatibility" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbCompatibility
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "InputObject",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbCompatibility" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-        $compatibilityLevel = $server.Databases['master'].CompatibilityLevel
+        $masterCompatLevel = $server.Databases['master'].CompatibilityLevel
     }
-    Context "Gets compatibility for multiple databases" {
-        $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1
-        It "Gets results" {
-            $results | Should Not Be $null
-        }
-        Foreach ($row in $results) {
-            It "Should return correct compatibility level for $($row.database)" {
-                # Only test system databases as there might be leftover databases from other tests
-                if ($row.DatabaseId -le 4) {
-                    $row.Compatibility | Should Be $compatibilityLevel
-                }
-                $row.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $row.Database).Id
-            }
-        }
-    }
-    Context "Gets compatibility for one database" {
-        $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1 -database master
 
-        It "Gets results" {
-            $results | Should Not Be $null
+    Context "When getting compatibility for multiple databases" {
+        BeforeAll {
+            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1
         }
-        It "Should return correct compatibility level for $($results.database)" {
-            $results.Compatibility | Should Be $compatibilityLevel
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns correct compatibility level for database <_.Database>" -ForEach $results {
+            # Only test system databases as there might be leftover databases from other tests
+            if ($PSItem.DatabaseId -le 4) {
+                $PSItem.Compatibility | Should -Be $masterCompatLevel
+            }
+            $PSItem.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database $PSItem.Database).Id
+        }
+    }
+
+    Context "When getting compatibility for a single database" {
+        BeforeAll {
+            $results = Get-DbaDbCompatibility -SqlInstance $TestConfig.instance1 -Database master
+        }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
+        It "Returns correct compatibility level for master database" {
+            $results.Compatibility | Should -Be $masterCompatLevel
             $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master).Id
         }
     }

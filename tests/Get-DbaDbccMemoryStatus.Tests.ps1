@@ -1,33 +1,59 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaDbccMemoryStatus" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbccMemoryStatus
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname  Integration Test" -Tag "IntegrationTests" {
-    $props = 'ComputerName', 'InstanceName', 'RecordSet', 'RowId', 'RecordSetId', 'Type', 'Name', 'Value', 'ValueType'
-    $result = Get-DbaDbccMemoryStatus -SqlInstance $TestConfig.instance2
+
+Describe "Get-DbaDbccMemoryStatus" -Tag "IntegrationTests" {
+    BeforeAll {
+        $result = Get-DbaDbccMemoryStatus -SqlInstance $TestConfig.instance2
+        $props = @(
+            'ComputerName',
+            'InstanceName',
+            'RecordSet',
+            'RowId',
+            'RecordSetId',
+            'Type',
+            'Name',
+            'Value',
+            'ValueType'
+        )
+    }
 
     Context "Validate standard output" {
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
+        It "Should return property: <_>" -ForEach $props {
+            $result[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
     }
 
     Context "Command returns proper info" {
-        It "returns results for DBCC MEMORYSTATUS" {
-            $result.Count -gt 0 | Should Be $true
+        It "Returns results for DBCC MEMORYSTATUS" {
+            $result.Count | Should -BeGreaterThan 0
         }
     }
 }

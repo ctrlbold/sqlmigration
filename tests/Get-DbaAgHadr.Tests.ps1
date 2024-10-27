@@ -1,25 +1,44 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaAgHadr" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaAgHadr
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
 # $TestConfig.instance3 is used for Availability Group tests and needs Hadr service setting enabled
 
-Describe "$CommandName Integration Test" -Tag "IntegrationTests" {
-    $results = Get-DbaAgHadr -SqlInstance $TestConfig.instance3
+Describe "Get-DbaAgHadr" -Tag "IntegrationTests" {
+    BeforeAll {
+        $results = Get-DbaAgHadr -SqlInstance $TestConfig.instance3
+    }
+
     Context "Validate output" {
         It "returns the correct properties" {
-            $results.IsHadrEnabled | Should -Be $true
+            $results.IsHadrEnabled | Should -BeTrue
         }
     }
 } #$TestConfig.instance2 for appveyor

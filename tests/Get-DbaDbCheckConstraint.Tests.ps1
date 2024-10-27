@@ -1,19 +1,39 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'ExcludeSystemTable', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
+
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaDbCheckConstraint" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbCheckConstraint
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "ExcludeDatabase",
+            "ExcludeSystemTable",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaDbCheckConstraint" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
@@ -34,20 +54,23 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
     Context "Command actually works" {
         It "returns no check constraints from excluded DB with -ExcludeDatabase" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -ExcludeDatabase master
-            $results.where( { $_.Database -eq 'master' }).count | Should Be 0
+            $results.where( { $PSItem.Database -eq 'master' }).Count | Should -Be 0
         }
+
         It "returns only check constraints from selected DB with -Database" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -Database $dbname
-            $results.where( { $_.Database -ne 'master' }).count | Should Be 1
+            $results.where( { $PSItem.Database -ne 'master' }).Count | Should -Be 1
             $results.DatabaseId | Get-Unique | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname).Id
         }
+
         It "Should include test check constraint: $ckName" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeSystemTable
-            ($results | Where-Object Name -eq $ckName).Name | Should Be $ckName
+            ($results | Where-Object Name -eq $ckName).Name | Should -Be $ckName
         }
+
         It "Should exclude system tables" {
             $results = Get-DbaDbCheckConstraint -SqlInstance $TestConfig.instance2 -Database master -ExcludeSystemTable
-            ($results | Where-Object Name -eq 'spt_fallback_db') | Should Be $null
+            ($results | Where-Object Name -eq 'spt_fallback_db') | Should -BeNullOrEmpty
         }
     }
 }

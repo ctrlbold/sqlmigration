@@ -1,39 +1,60 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Pattern', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Find-DbaUserObject" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Find-DbaUserObject
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Pattern",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Command finds User Objects for SA" {
+Describe "Find-DbaUserObject" -Tag "IntegrationTests" {
+    Context "When finding User Objects for SA" {
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_userObject' -Owner 'sa'
+            $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2 -Pattern sa
         }
+        
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_userObject' -Confirm:$false
         }
 
-        $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2 -Pattern sa
         It "Should find a specific Database Owned by sa" {
-            $results.Where( {$_.name -eq 'dbatoolsci_userobject'}).Type | Should Be "Database"
+            $results.Where({ $PSItem.name -eq 'dbatoolsci_userobject' }).Type | Should -BeExactly "Database"
         }
+
         It "Should find more than 10 objects Owned by sa" {
-            $results.Count | Should BeGreaterThan 10
+            $results.Count | Should -BeGreaterThan 10
         }
     }
-    Context "Command finds User Objects" {
-        $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
-        It "Should find resutls" {
-            $results | Should Not Be Null
+
+    Context "When finding all User Objects" {
+        BeforeAll {
+            $results = Find-DbaUserObject -SqlInstance $TestConfig.instance2
+        }
+
+        It "Should find results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

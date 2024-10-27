@@ -1,30 +1,68 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'AvailabilityGroup', 'Listener', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+
+Describe "Get-DbaAgListener" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaAgListener
+        $knownParameters = @(
+            'SqlInstance',
+            'SqlCredential', 
+            'AvailabilityGroup',
+            'Listener',
+            'InputObject',
+            'EnableException'
+        )
+        $knownParameters += $TestConfig.CommonParameters
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $knownParameters {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of parameters ($($knownParameters.Count))" {
+            $params = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $knownParameters -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
+Describe "Get-DbaAgListener" -Tag "IntegrationTests" {
     BeforeAll {
         $agname = "dbatoolsci_ag_listener"
-        $ag = New-DbaAvailabilityGroup -Primary $TestConfig.instance3 -Name $agname -ClusterType None -FailoverMode Manual -Certificate dbatoolsci_AGCert -Confirm:$false
-        $ag | Add-DbaAgListener -IPAddress 127.0.20.1 -Port 14330 -Confirm:$false
+        $splatAg = @{
+            Primary = $TestConfig.instance3
+            Name = $agname
+            ClusterType = "None"
+            FailoverMode = "Manual"
+            Certificate = "dbatoolsci_AGCert"
+            Confirm = $false
+        }
+        $ag = New-DbaAvailabilityGroup @splatAg
+
+        $splatListener = @{
+            IPAddress = "127.0.20.1"
+            Port = 14330
+            Confirm = $false
+        }
+        $ag | Add-DbaAgListener @splatListener
     }
+
     AfterAll {
         $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.instance3 -AvailabilityGroup $agname -Confirm:$false
     }
-    Context "gets ags" {
-        It "returns results with proper data" {
+
+    Context "When getting availability group listeners" {
+        BeforeAll {
             $results = Get-DbaAgListener -SqlInstance $TestConfig.instance3
+        }
+
+        It "Returns results with proper port number" {
             $results.PortNumber | Should -Contain 14330
         }
     }

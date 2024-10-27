@@ -1,109 +1,99 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        It "Should only contain our specific parameters" {
-            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-            [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'IgnoreUptime', 'InputObject', 'EnableException', 'Seeks', 'Scans', 'Lookups'
-            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+Describe "Find-DbaDbUnusedIndex" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Find-DbaDbUnusedIndex
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "IgnoreUptime",
+            "Seeks",
+            "Scans",
+            "Lookups",
+            "InputObject",
+            "EnableException"
+        )
+    }
 
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
 
+Describe "Find-DbaDbUnusedIndex" -Tag "IntegrationTests" {
+    BeforeAll {
+        Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $($TestConfig.instance2)"
+        Test-DbaConnection -SqlInstance $TestConfig.instance2
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Verify basics of the Find-DbaDbUnusedIndex command" {
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+
+        $random = Get-Random
+        $dbName = "dbatoolsci_$random"
+
+        Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex setting up the new database $dbName"
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+        $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
+
+        $indexName = "dbatoolsci_index_$random"
+        $tableName = "dbatoolsci_table_$random"
+        $sql = "USE $dbName;
+                CREATE TABLE $tableName (ID INTEGER);
+                CREATE INDEX $indexName ON $tableName (ID);
+                INSERT INTO $tableName (ID) VALUES (1);
+                SELECT ID FROM $tableName;
+                WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
+
+        $null = $server.Query($sql)
+    }
+
+    AfterAll {
+        Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex removing the database $dbName"
+        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
+    }
+
+    Context "When finding unused indexes" {
         BeforeAll {
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex testing connection to $($TestConfig.instance2)"
-            Test-DbaConnection -SqlInstance $TestConfig.instance2
-
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-
-            $random = Get-Random
-            $dbName = "dbatoolsci_$random"
-
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex setting up the new database $dbName"
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
-            $newDB = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $dbName
-
-            $indexName = "dbatoolsci_index_$random"
-            $tableName = "dbatoolsci_table_$random"
-            $sql = "USE $dbName;
-                    CREATE TABLE $tableName (ID INTEGER);
-                    CREATE INDEX $indexName ON $tableName (ID);
-                    INSERT INTO $tableName (ID) VALUES (1);
-                    SELECT ID FROM $tableName;
-                    WAITFOR DELAY '00:00:05'; -- for slower systems allow the query optimizer engine to catch up and update sys.dm_db_index_usage_stats"
-
-            $null = $server.Query($sql)
-        }
-
-        AfterAll {
-            Write-Message -Level Warning -Message "Find-DbaDbUnusedIndex removing the database $dbName"
-            Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbName -Confirm:$false
-        }
-
-        It "Should find the 'unused' index on each test sql instance" {
             $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
+        }
+
+        It "Returns results for the test database" {
             $results.Database | Should -Be $dbName
             $results.DatabaseId | Should -Be $newDB.Id
-
-            $testSQLinstance = $false
-
-            foreach ($row in $results) {
-                if ($row["IndexName"] -eq $indexName) {
-                    Write-Message -Level Debug -Message "$($indexName) was found on $($TestConfig.instance2) in database $($dbName)"
-                    $testSQLinstance = $true
-                } else {
-                    Write-Message -Level Warning -Message "$($indexName) was not found on $($TestConfig.instance2) in database $($dbName)"
-                }
-            }
-
-            $testSQLinstance | Should -Be $true
         }
 
+        It "Finds the test index" {
+            $foundIndex = $results | Where-Object IndexName -eq $indexName
+            $foundIndex | Should -Not -BeNullOrEmpty
+        }
 
-        It "Should return the expected columns on each test sql instance" {
-            [object[]]$expectedColumnArray = 'CompressionDescription', 'ComputerName', 'Database', 'DatabaseId', 'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName', 'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate', 'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate', 'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup', 'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc', 'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
+        It "Returns all expected properties" {
+            $expectedColumns = @(
+                'CompressionDescription', 'ComputerName', 'Database', 'DatabaseId',
+                'IndexId', 'IndexName', 'IndexSizeMB', 'InstanceName',
+                'LastSystemLookup', 'LastSystemScan', 'LastSystemSeek', 'LastSystemUpdate',
+                'LastUserLookup', 'LastUserScan', 'LastUserSeek', 'LastUserUpdate',
+                'ObjectId', 'RowCount', 'Schema', 'SqlInstance', 'SystemLookup',
+                'SystemScans', 'SystemSeeks', 'SystemUpdates', 'Table', 'TypeDesc',
+                'UserLookups', 'UserScans', 'UserSeeks', 'UserUpdates'
+            )
 
-            $testSQLinstance = $false
-
-            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.instance2 -Database $dbName -IgnoreUptime -Seeks 10 -Scans 10 -Lookups 10
-
-            if ( ($null -ne $results) ) {
-                $row = $null
-                # if one row is returned $results will be a System.Data.DataRow, otherwise it will be an object[] of System.Data.DataRow
-                if ($results -is [System.Data.DataRow]) {
-                    $row = $results
-                } elseif ($results -is [Object[]] -and $results.Count -gt 0) {
-                    $row = $results[0]
-                } else {
-                    Write-Message -Level Warning -Message "Unexpected results returned from $($SqlInstance): $($results)"
-                    $testSQLinstance = $false
-                }
-
-                if ($null -ne $row) {
-                    [object[]]$columnNamesReturned = @($row | Get-Member -MemberType Property | Select-Object -Property Name | ForEach-Object { $_.Name })
-
-                    if ( @(Compare-Object -ReferenceObject $expectedColumnArray -DifferenceObject $columnNamesReturned).Count -eq 0 ) {
-                        Write-Message -Level Debug -Message "Columns matched on $($TestConfig.instance2)"
-                        $testSQLinstance = $true
-                    } else {
-                        Write-Message -Level Warning -Message "The columns specified in the expectedColumnList variable do not match these returned columns from $($TestConfig.instance2): $($columnNamesReturned)"
-                    }
-                }
-            }
-
-            $testSQLinstance | Should -Be $true
+            $resultColumns = $results[0].PSObject.Properties.Name
+            $comparison = Compare-Object -ReferenceObject $expectedColumns -DifferenceObject $resultColumns
+            $comparison | Should -BeNullOrEmpty
         }
     }
 }

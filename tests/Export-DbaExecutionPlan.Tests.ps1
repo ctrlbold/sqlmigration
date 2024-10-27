@@ -11,7 +11,7 @@ Describe "Export-DbaExecutionPlan" -Tag "UnitTests" {
             $expected = $TestConfig.CommonParameters
             $expected += @(
                 "SqlInstance",
-                "SqlCredential", 
+                "SqlCredential",
                 "Database",
                 "ExcludeDatabase",
                 "Path",
@@ -34,23 +34,3 @@ Describe "Export-DbaExecutionPlan" -Tag "UnitTests" {
         }
     }
 }
-
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidance.
-#></source>
-
-Key changes made:
-1. Added Pester v5 requirements header
-2. Added proper param block with TestConfig
-3. Removed old $CommandName assignment
-4. Restructured parameter validation using BeforeAll block
-5. Updated parameter testing to use -ForEach and proper assertions
-6. Maintained the integration test placeholder comment
-7. Fixed typo in guidance URL comment
-8. Ensured all parameters are included in the expected list
-9. Used proper Should -HaveParameter syntax
-10. Maintained double quotes for string consistency
-
-The file now follows all the conventions specified in the reference document while maintaining the same testing functionality.

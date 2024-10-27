@@ -1,19 +1,37 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'IncludeOverlapping', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Find-DbaDbDuplicateIndex" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Find-DbaDbDuplicateIndex
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "IncludeOverlapping",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Find-DbaDbDuplicateIndex" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
         $sql = "create database [dbatools_dupeindex]"
@@ -46,14 +64,18 @@ Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
             "
         $server.Query($sql)
     }
+
     AfterAll {
         Remove-DbaDatabase -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex -Confirm:$false
     }
 
-    Context "Gets back some results" {
-        $results = Find-DbaDbDuplicateIndex -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex
-        It "return at least two results" {
-            $results.Count -ge 2 | Should Be $true
+    Context "When finding duplicate indexes" {
+        BeforeAll {
+            $results = Find-DbaDbDuplicateIndex -SqlInstance $TestConfig.instance1 -Database dbatools_dupeindex
+        }
+
+        It "Should return at least two results" {
+            $results.Count | Should -BeGreaterOrEqual 2
         }
     }
 }

@@ -1,64 +1,100 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'EventType', 'FileType', 'UseLocalTime', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Find-DbaDbGrowthEvent" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Find-DbaDbGrowthEvent
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "ExcludeDatabase",
+            "EventType",
+            "FileType",
+            "UseLocalTime",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
-    Context "Command actually works" {
+Describe "Find-DbaDbGrowthEvent" -Tag "IntegrationTests" {
+    BeforeAll {
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
+        $random = Get-Random
+        $databaseName = "dbatoolsci1_$random"
+        $database = New-DbaDatabase -SqlInstance $server -Name $databaseName
+
+        $sqlGrowthAndShrink = @"
+CREATE TABLE Tab1 (ID INTEGER);
+
+INSERT INTO Tab1 (ID)
+SELECT
+    1
+FROM
+    sys.all_objects a
+CROSS JOIN
+    sys.all_objects b;
+
+TRUNCATE TABLE Tab1;
+DBCC SHRINKFILE ($databaseName, TRUNCATEONLY);
+DBCC SHRINKFILE ($($databaseName)_Log, TRUNCATEONLY);
+"@
+
+        $null = $database.Query($sqlGrowthAndShrink)
+    }
+
+    AfterAll {
+        $database | Remove-DbaDatabase -Confirm:$false
+    }
+
+    Context "When finding growth events" {
         BeforeAll {
-            $server = Connect-DbaInstance -SqlInstance $TestConfig.instance1
-            $random = Get-Random
-            $databaseName1 = "dbatoolsci1_$random"
-            $db1 = New-DbaDatabase -SqlInstance $server -Name $databaseName1
-
-            $sqlGrowthAndShrink =
-            "CREATE TABLE Tab1 (ID INTEGER);
-
-            INSERT INTO Tab1 (ID)
-            SELECT
-                1
-            FROM
-                sys.all_objects a
-            CROSS JOIN
-                sys.all_objects b;
-
-            TRUNCATE TABLE Tab1;
-            DBCC SHRINKFILE ($databaseName1, TRUNCATEONLY);
-            DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
-            "
-
-            $null = $db1.Query($sqlGrowthAndShrink)
-        }
-        AfterAll {
-            $db1 | Remove-DbaDatabase -Confirm:$false
+            $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName -EventType Growth
         }
 
-        It "Should find auto growth events in the default trace" {
-            $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName1 -EventType Growth
-            ($results | Where-Object { $_.EventClass -in (92, 93) }).count | Should -BeGreaterThan 0
-            $results.DatabaseName | unique | Should -Be $databaseName1
-            $results.DatabaseId | unique | Should -Be $db1.ID
+        It "Returns growth events from default trace" {
+            ($results | Where-Object { $PSItem.EventClass -in (92, 93) }).Count | Should -BeGreaterThan 0
         }
 
-        <# Leaving this commented out since the background process for auto shrink cannot be triggered
+        It "Returns results for correct database" {
+            $results.DatabaseName | Select-Object -Unique | Should -Be $databaseName
+            $results.DatabaseId | Select-Object -Unique | Should -Be $database.ID
+        }
+    }
 
-        It "Should find auto shrink events in the default trace" {
-            $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName1 -EventType Shrink
+    <# Leaving this commented out since the background process for auto shrink cannot be triggered
+
+    Context "When finding shrink events" {
+        BeforeAll {
+            $results = Find-DbaDbGrowthEvent -SqlInstance $server -Database $databaseName -EventType Shrink
+        }
+
+        It "Returns shrink events from default trace" {
             $results.EventClass | Should -Contain 94 # data file shrink
             $results.EventClass | Should -Contain 95 # log file shrink
-            $results.DatabaseName | unique | Should -Be $databaseName1
-            $results.DatabaseId | unique | Should -Be $db1.ID
         }
-        #>
+
+        It "Returns results for correct database" {
+            $results.DatabaseName | Select-Object -Unique | Should -Be $databaseName
+            $results.DatabaseId | Select-Object -Unique | Should -Be $database.ID
+        }
     }
+    #>
 }

@@ -1,54 +1,76 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Certificate', 'Subject', 'InputObject', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaDbCertificate" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbCertificate
+        $knownParameters = @(
+            'SqlInstance'
+            'SqlCredential'
+            'Database'
+            'ExcludeDatabase'
+            'Certificate'
+            'Subject'
+            'InputObject'
+            'EnableException'
+        )
+        $expected = $TestConfig.CommonParameters + $knownParameters
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaDbCertificate" -Tag "IntegrationTests" {
     Context "Can get a database certificate" {
         BeforeAll {
+            $masterKey = $null
+            $tempdbMasterKey = $null
+            
             if (-not (Get-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master)) {
-                $masterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+                $masterKey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database master -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             }
 
-            $tempdbmasterkey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
+            $tempdbMasterKey = New-DbaDbMasterKey -SqlInstance $TestConfig.instance1 -Database tempdb -Password $(ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force) -Confirm:$false
             $certificateName1 = "Cert_$(Get-Random)"
             $certificateName2 = "Cert_$(Get-Random)"
             $cert1 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName1 -Confirm:$false
             $cert2 = New-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Name $certificateName2 -Database "tempdb" -Confirm:$false
         }
+
         AfterAll {
             $null = $cert1 | Remove-DbaDbCertificate -Confirm:$false
             $null = $cert2 | Remove-DbaDbCertificate -Confirm:$false
-            if ($tempdbmasterkey) { $tempdbmasterkey | Remove-DbaDbMasterKey -Confirm:$false }
-            if ($masterKey) { $masterkey | Remove-DbaDbMasterKey -Confirm:$false }
+            if ($tempdbMasterKey) { $tempdbMasterKey | Remove-DbaDbMasterKey -Confirm:$false }
+            if ($masterKey) { $masterKey | Remove-DbaDbMasterKey -Confirm:$false }
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $certificateName1
-        It "returns database certificate created in default, master database" {
-            "$($cert.Database)" -match 'master' | Should Be $true
+        It "Returns database certificate created in default, master database" {
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Certificate $certificateName1
+            $cert.Database | Should -Match 'master'
             $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database master).Id
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database tempdb
-        It "returns database certificate created in tempdb database, looked up by certificate name" {
-            "$($cert.Name)" -match $certificateName2 | Should Be $true
+        It "Returns database certificate created in tempdb database, looked up by certificate name" {
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -Database tempdb
+            $cert.Name | Should -Match $certificateName2
             $cert.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb).Id
         }
 
-        $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -ExcludeDatabase master
-        It "returns database certificates excluding those in the master database" {
-            "$($cert.Database)" -notmatch 'master' | Should Be $true
+        It "Returns database certificates excluding those in the master database" {
+            $cert = Get-DbaDbCertificate -SqlInstance $TestConfig.instance1 -ExcludeDatabase master
+            $cert.Database | Should -Not -Match 'master'
         }
-
     }
 }

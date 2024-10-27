@@ -1,43 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaBackupDevice" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaBackupDevice
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaBackupDevice" -Tag "IntegrationTests" {
     BeforeAll {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.Instance2
         $sql = "EXEC sp_addumpdevice 'tape', 'dbatoolsci_tape', '\\.\tape0';"
         $server.Query($sql)
     }
-    Afterall {
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
+
+    AfterAll {
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.Instance2
         $sql = "EXEC sp_dropdevice 'dbatoolsci_tape';"
         $server.Query($sql)
     }
 
-    Context "Gets the backup devices" {
-        $results = Get-DbaBackupDevice -SqlInstance $TestConfig.instance2
-        It "Results are not empty" {
-            $results | Should Not Be $Null
+    Context "When getting backup devices" {
+        BeforeAll {
+            $results = Get-DbaBackupDevice -SqlInstance $TestConfig.Instance2
         }
+
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
+        }
+
         It "Should have the name dbatoolsci_tape" {
-            $results.name | Should Be "dbatoolsci_tape"
+            $results.Name | Should -Be "dbatoolsci_tape"
         }
+
         It "Should have a BackupDeviceType of Tape" {
-            $results.BackupDeviceType | Should Be "Tape"
+            $results.BackupDeviceType | Should -Be "Tape"
         }
+
         It "Should have a PhysicalLocation of \\.\Tape0" {
-            $results.PhysicalLocation | Should Be "\\.\Tape0"
+            $results.PhysicalLocation | Should -Be "\\.\Tape0"
         }
     }
 }

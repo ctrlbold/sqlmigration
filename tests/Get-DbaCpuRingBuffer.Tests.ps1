@@ -1,24 +1,43 @@
-$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tags "UnitTests" {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'CollectionMinutes', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+
+Describe "Get-DbaCpuRingBuffer" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaCpuRingBuffer
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "CollectionMinutes",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Get-DbaCpuRingBuffer" -Tag "IntegrationTests" {
     Context "Command returns proper info" {
-        $results = Get-DbaCpuRingBuffer -SqlInstance $TestConfig.instance2 -CollectionMinutes 100
+        BeforeAll {
+            $results = Get-DbaCpuRingBuffer -SqlInstance $TestConfig.Instance2 -CollectionMinutes 100
+        }
 
-        It "returns results" {
-            $results.Count -gt 0 | Should Be $true
+        It "Returns results" {
+            $results | Should -Not -BeNullOrEmpty
         }
     }
 }

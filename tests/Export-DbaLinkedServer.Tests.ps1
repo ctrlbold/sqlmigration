@@ -35,21 +35,3 @@ Describe "Export-DbaLinkedServer" -Tag "UnitTests" {
         }
     }
 }
-
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidance.
-#></source>
-
-Key changes made:
-1. Added the required Pester v5 header with module requirements
-2. Removed `$CommandName` variable as it's no longer needed
-3. Restructured parameter validation using the new convention from conventions.md
-4. Added proper BeforeAll block for test setup
-5. Updated parameter comparison to use Should -HaveParameter
-6. Fixed typo in guidance comment
-7. Used proper array declaration format for expected parameters
-8. Maintained all existing parameters while updating the test structure
-
-The file now follows the Pester v5 conventions while maintaining the same test coverage.

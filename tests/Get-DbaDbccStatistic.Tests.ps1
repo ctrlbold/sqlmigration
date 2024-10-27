@@ -1,18 +1,40 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'Object', 'Target', 'Option', 'NoInformationalMessages', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaDbccStatistic" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaDbccStatistic
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Database",
+            "Object",
+            "Target",
+            "Option",
+            "NoInformationalMessages",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
-Describe "$commandname Integration Test" -Tag "IntegrationTests" {
+
+Describe "Get-DbaDbccStatistic" -Tag "IntegrationTests" {
     BeforeAll {
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
         $random = Get-Random
@@ -31,90 +53,101 @@ Describe "$commandname Integration Test" -Tag "IntegrationTests" {
         $null = $server.Query("CREATE STATISTICS [TestStat2] ON $tableName2([idTbl1], [idTbl2])", $dbname)
         $null = $server.Query("UPDATE STATISTICS $tableName", $dbname)
     }
+
     AfterAll {
         $null = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname | Remove-DbaDatabase -Confirm:$false
     }
 
-    Context "Validate standard output for StatHeader option " {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'Name', 'Updated', 'Rows', 'RowsSampled', 'Steps', 'Density', 'AverageKeyLength', 'StringIndex', 'FilterExpression', 'UnfilteredRows', 'PersistedSamplePercent'
-        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatHeader
-
-        It "returns correct results" {
-            $result.Count -eq 3 | Should Be $true
+    Context "When validating StatHeader option output" {
+        BeforeAll {
+            $props = @(
+                'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd',
+                'Name', 'Updated', 'Rows', 'RowsSampled', 'Steps', 'Density', 'AverageKeyLength',
+                'StringIndex', 'FilterExpression', 'UnfilteredRows', 'PersistedSamplePercent'
+            )
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatHeader
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-        }
-    }
-
-    Context "Validate standard output for DensityVector option " {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'AllDensity', 'AverageLength', 'Columns'
-        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option DensityVector
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+        It "Returns correct number of results" {
+            $result.Count | Should -Be 3
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-
+        It "Should return property: <_>" -ForEach $props {
+            $result[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
     }
 
-    Context "Validate standard output for Histogram option " {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'RangeHiKey', 'RangeRows', 'EqualRows', 'DistinctRangeRows', 'AverageRangeRows'
-        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option Histogram
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+    Context "When validating DensityVector option output" {
+        BeforeAll {
+            $props = @(
+                'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd',
+                'AllDensity', 'AverageLength', 'Columns'
+            )
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option DensityVector
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-
-        }
-    }
-
-    Context "Validate standard output for StatsStream option " {
-        $props = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd', 'StatsStream', 'Rows', 'DataPages'
-        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatsStream
-
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+        It "Returns results" {
+            $result.Count | Should -BeGreaterThan 0
         }
 
-        foreach ($prop in $props) {
-            $p = $result[0].PSObject.Properties[$prop]
-            It "Should return property: $prop" {
-                $p.Name | Should Be $prop
-            }
-
+        It "Should return property: <_>" -ForEach $props {
+            $result[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
     }
 
-    Context "Validate returns results for single Object " {
-        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Option StatsStream
+    Context "When validating Histogram option output" {
+        BeforeAll {
+            $props = @(
+                'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd',
+                'RangeHiKey', 'RangeRows', 'EqualRows', 'DistinctRangeRows', 'AverageRangeRows'
+            )
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option Histogram
+        }
 
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+        It "Returns results" {
+            $result.Count | Should -BeGreaterThan 0
+        }
+
+        It "Should return property: <_>" -ForEach $props {
+            $result[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
     }
 
-    Context "Validate returns results for single Object and Target " {
-        $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2'  -Option DensityVector
+    Context "When validating StatsStream option output" {
+        BeforeAll {
+            $props = @(
+                'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'Object', 'Target', 'Cmd',
+                'StatsStream', 'Rows', 'DataPages'
+            )
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Option StatsStream
+        }
 
-        It "returns results" {
-            $result.Count -gt 0 | Should Be $true
+        It "Returns results" {
+            $result.Count | Should -BeGreaterThan 0
+        }
+
+        It "Should return property: <_>" -ForEach $props {
+            $result[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
+        }
+    }
+
+    Context "When querying a single Object" {
+        BeforeAll {
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Option StatsStream
+        }
+
+        It "Returns results" {
+            $result.Count | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "When querying a single Object and Target" {
+        BeforeAll {
+            $result = Get-DbaDbccStatistic -SqlInstance $TestConfig.instance2 -Database $dbname -Object $tableName2 -Target 'TestStat2' -Option DensityVector
+        }
+
+        It "Returns results" {
+            $result.Count | Should -BeGreaterThan 0
         }
     }
 }

@@ -1,33 +1,64 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Category', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Get-DbaAgentAlertCategory" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaAgentAlertCategory
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Category",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
-    Context "Command gets alert categories" {
+Describe "Get-DbaAgentAlertCategory" -Tag "IntegrationTests" {
+    BeforeAll {
+        $categories = @(
+            "dbatoolsci_testcategory",
+            "dbatoolsci_testcategory2"
+        )
+        $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categories
+    }
+    
+    AfterAll {
+        $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category $categories -Confirm:$false
+    }
+
+    Context "When getting all alert categories" {
         BeforeAll {
-            $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2
+            $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 | Where-Object Name -match "dbatoolsci"
         }
-        AfterAll {
-            $null = Remove-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory, dbatoolsci_testcategory2 -Confirm:$false
+
+        It "Returns at least 2 categories" {
+            $results.Count | Should -BeGreaterThan 1
         }
-        $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 | Where-Object {$_.Name -match "dbatoolsci"}
-        It "Should get at least 2 categories" {
-            $results.count | Should BeGreaterThan 1
+    }
+
+    Context "When getting a specific alert category" {
+        BeforeAll {
+            $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory | 
+                Where-Object Name -match "dbatoolsci"
         }
-        $results = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.instance2 -Category dbatoolsci_testcategory | Where-Object {$_.Name -match "dbatoolsci"}
-        It "Should get the dbatoolsci_testcategory category" {
-            $results.count | Should Be 1
+
+        It "Returns exactly one category" {
+            $results.Count | Should -Be 1
         }
     }
 }

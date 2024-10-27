@@ -1,22 +1,48 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'ClassName', 'Query', 'ComputerName', 'Credential', 'Namespace', 'DoNotUse', 'Force', 'SilentlyContinue', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaCmObject" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaCmObject
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "ClassName",
+            "Query",
+            "ComputerName",
+            "Credential",
+            "Namespace",
+            "DoNotUse",
+            "Force",
+            "SilentlyContinue",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "returns proper information" {
-        It "returns a bias that's an int" {
-            (Get-DbaCmObject -ClassName Win32_TimeZone).Bias -is [int]
+Describe "Get-DbaCmObject" -Tag "IntegrationTests" {
+    Context "When querying Win32_TimeZone" {
+        BeforeAll {
+            $results = Get-DbaCmObject -ClassName Win32_TimeZone
+        }
+
+        It "Returns a Bias property that is an integer" {
+            $results.Bias | Should -BeOfType [int]
         }
     }
 }

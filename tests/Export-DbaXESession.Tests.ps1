@@ -1,55 +1,92 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'InputObject', 'Session', 'Path', 'FilePath', 'Encoding', 'Passthru', 'BatchSeparator', 'NoPrefix', 'NoClobber', 'Append', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Export-DbaXESession" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Export-DbaXESession
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "InputObject",
+            "Session",
+            "Path",
+            "FilePath",
+            "Encoding",
+            "Passthru",
+            "BatchSeparator",
+            "NoPrefix",
+            "NoClobber",
+            "Append",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-
-Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+Describe "Export-DbaXESession" -Tag "IntegrationTests" {
     BeforeAll {
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile = "$AltExportPath\Dbatoolsci_XE_CustomFile.sql"
     }
+    
     AfterAll {
-        (Get-ChildItem $outputFile -ErrorAction SilentlyContinue) | Remove-Item -ErrorAction SilentlyContinue
+        Get-ChildItem $outputFile -ErrorAction SilentlyContinue | Remove-Item -ErrorAction SilentlyContinue
     }
 
-    Context "Check if output file was created" {
-        $null = Export-DbaXESession -SqlInstance $TestConfig.instance2 -FilePath $outputFile
-        It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile).Count | Should Be 1
+    Context "When exporting XE sessions to file" {
+        BeforeAll {
+            $null = Export-DbaXESession -SqlInstance $TestConfig.Instance2 -FilePath $outputFile
         }
-        It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
-        }
-    }
 
-    Context "Check if session parameter is honored" {
-        $null = Export-DbaXESession -SqlInstance $TestConfig.instance2 -FilePath $outputFile -Session system_health
-        It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile).Count | Should Be 1
+        It "Creates a single SQL file" {
+            (Get-ChildItem $outputFile).Count | Should -Be 1
         }
-        It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
+
+        It "Creates a non-empty file" {
+            (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }
 
-    Context "Check if supports Pipeline input" {
-        $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session system_health | Export-DbaXESession -FilePath $outputFile
-        It "Exports results to one sql file" {
-            (Get-ChildItem $outputFile).Count | Should Be 1
+    Context "When exporting specific XE session" {
+        BeforeAll {
+            $null = Export-DbaXESession -SqlInstance $TestConfig.Instance2 -FilePath $outputFile -Session system_health
         }
-        It "Exported file is bigger than 0" {
-            (Get-ChildItem $outputFile).Length | Should BeGreaterThan 0
+
+        It "Creates a single SQL file" {
+            (Get-ChildItem $outputFile).Count | Should -Be 1
+        }
+
+        It "Creates a non-empty file" {
+            (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
+        }
+    }
+
+    Context "When using pipeline input" {
+        BeforeAll {
+            $null = Get-DbaXESession -SqlInstance $TestConfig.Instance2 -Session system_health | 
+                Export-DbaXESession -FilePath $outputFile
+        }
+
+        It "Creates a single SQL file" {
+            (Get-ChildItem $outputFile).Count | Should -Be 1
+        }
+
+        It "Creates a non-empty file" {
+            (Get-ChildItem $outputFile).Length | Should -BeGreaterThan 0
         }
     }
 }

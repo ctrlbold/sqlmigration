@@ -1,24 +1,43 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+
+Describe "Get-DbaConnection" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Get-DbaConnection
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "EnableException"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    Context "returns the proper transport" {
-        $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
-        foreach ($result in $results) {
-            It "returns an scheme" {
-                $result.AuthScheme -eq 'ntlm' -or $result.AuthScheme -eq 'Kerberos' | Should -Be $true
+Describe "Get-DbaConnection" -Tag "IntegrationTests" {
+    Context "When connecting to SQL Server" {
+        BeforeAll {
+            $results = Get-DbaConnection -SqlInstance $TestConfig.instance1
+        }
+
+        It "Returns results with valid authentication scheme" {
+            foreach ($result in $results) {
+                $result.AuthScheme | Should -BeIn @('ntlm', 'Kerberos')
             }
         }
     }
