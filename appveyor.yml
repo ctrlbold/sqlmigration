@@ -4,7 +4,7 @@ configuration: "Debug"
 
 build_script:
  - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
- - cmd: pip install aider-chat # Install aider-chat
+ - cmd: python3 -m pip install aider-chat # Install aider-chat
 
 version: 2.1.{build}
 
