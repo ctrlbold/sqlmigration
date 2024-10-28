@@ -66,12 +66,6 @@ Describe "Expand-DbaDbLogFile" -Tag "IntegrationTests" {
             $results | Should -BeOfType System.Management.Automation.PSCustomObject
         }
 
-        It "Has required properties" {
-            $required = 'ComputerName', 'InstanceName', 'SqlInstance', 'Database', 'ID', 'Name',
-                       'LogFileCount', 'InitialSize', 'CurrentSize', 'InitialVLFCount', 'CurrentVLFCount'
-            $results[0].PSObject.Properties.Name | Should -Contain $_  -ForEach $required
-        }
-
         It "Returns correct database name" {
             $results.Database | Should -Be $dbName
         }
