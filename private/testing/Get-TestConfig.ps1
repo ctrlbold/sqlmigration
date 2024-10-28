@@ -69,7 +69,12 @@ function Get-TestConfig {
     }
 
     # sometimes the enumeration doesn't work, so we'll just hardcode it
-    $config['CommonParameters'] = "Verbose", "Debug", "ErrorAction", "WarningAction", "InformationAction", "ProgressAction", "ErrorVariable", "WarningVariable", "OutVariable", "OutBuffer", "PipelineVariable", "InformationVariable"
+     if ($PSVersionTable.PSEdition -eq 'Core') {
+        $config['CommonParameters'] = "Verbose", "Debug", "ErrorAction", "WarningAction", "InformationAction", "ProgressAction", "ErrorVariable", "WarningVariable", "OutVariable", "OutBuffer", "PipelineVariable", "InformationVariable"
+     } else {
+        $config['CommonParameters'] = "Verbose", "Debug", "ErrorAction", "WarningAction", "InformationAction", "ErrorVariable", "WarningVariable", "OutVariable", "OutBuffer", "PipelineVariable", "InformationVariable"
+     }
+
 
     [pscustomobject]$config
 }
