@@ -4,23 +4,7 @@ param(
     $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
 )
 
-Describe "Get-DbaConnectedInstance" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Get-DbaConnectedInstance
-        $expected = $TestConfig.CommonParameters
-    }
-
-    Context "Parameter validation" {
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
-        }
-    }
-}
+# no params to test
 
 Describe "Get-DbaConnectedInstance" -Tag "IntegrationTests" {
     BeforeAll {

@@ -68,7 +68,8 @@ function Get-TestConfig {
         $config['CommandName'] = "Unknown"
     }
 
-    $config['CommonParameters'] = [System.Management.Automation.PSCmdlet]::CommonParameters
+    # sometimes the enumeration doesn't work, so we'll just hardcode it
+    $config['CommonParameters'] = "Verbose", "Debug", "ErrorAction", "WarningAction", "InformationAction", "ProgressAction", "ErrorVariable", "WarningVariable", "OutVariable", "OutBuffer", "PipelineVariable", "InformationVariable"
 
     [pscustomobject]$config
 }
