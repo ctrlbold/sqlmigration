@@ -4,7 +4,6 @@ configuration: "Debug"
 
 build_script:
  - ps: Set-Service wuauserv -StartupType Manual #otherwise, choco command exits with code 1058
- - cmd: python3 -m pip install aider-chat # Install aider-chat
 
 version: 2.1.{build}
 
@@ -20,8 +19,6 @@ clone_depth: 100
 
 # Set build info
 environment:
-  PYTHON: "C:\\Python39" # or specify the path to the latest Python version
-  PATH: "C:\\Python39;C:\\Python39\\Scripts;%PATH%"
   environment: development
   version: 2.1.$(appveyor_build_number)
   appveyor_rdp_password: 2odCuiKmYiem
