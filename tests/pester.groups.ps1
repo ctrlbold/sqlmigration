@@ -33,6 +33,7 @@ $TestsRunGroups = @{
         'Remove-DbaDatabaseSafely',
         'Sync-DbaLoginPermission',
         'Dismount-DbaDatabase',
+        'Get-DbaDbSynonym',
         # tests that fail locally against SQL Server 2022 instances and fail on AppVeyor
         'Set-DbaAgentJobStep',
         'New-DbaLogin',
