@@ -7,21 +7,21 @@ param(
 Add-ReplicationLibrary
 
 Describe "Enable-DbaReplPublishing" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Enable-DbaReplPublishing
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "SnapshotShare",
-                "PublisherSqlLogin",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Enable-DbaReplPublishing
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "SnapshotShare",
+            "PublisherSqlLogin",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

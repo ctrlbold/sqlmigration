@@ -5,19 +5,19 @@ param(
 )
 
 Describe "Enable-DbaForceNetworkEncryption" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Enable-DbaForceNetworkEncryption
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "Credential",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Enable-DbaForceNetworkEncryption
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "Credential",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

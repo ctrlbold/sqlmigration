@@ -5,27 +5,27 @@ param(
 )
 
 Describe "Copy-DbaDbCertificate" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaDbCertificate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                'Source',
-                'SourceSqlCredential',
-                'Destination',
-                'DestinationSqlCredential',
-                'Database',
-                'ExcludeDatabase',
-                'Certificate',
-                'ExcludeCertificate',
-                'SharedPath',
-                'MasterKeyPassword',
-                'EncryptionPassword',
-                'DecryptionPassword',
-                'EnableException'
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaDbCertificate
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'Database',
+            'ExcludeDatabase',
+            'Certificate',
+            'ExcludeCertificate',
+            'SharedPath',
+            'MasterKeyPassword',
+            'EncryptionPassword',
+            'DecryptionPassword',
+            'EnableException'
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

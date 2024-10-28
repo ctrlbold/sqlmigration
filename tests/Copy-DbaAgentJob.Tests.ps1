@@ -6,6 +6,23 @@ param(
 
 Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
     BeforeAll {
+        $command = Get-Command Copy-DbaAgentJob
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Job",
+            "ExcludeJob",
+            "DisableOnSource",
+            "DisableOnDestination",
+            "Force",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob
         $null = New-DbaAgentJob -SqlInstance $TestConfig.instance2 -Job dbatoolsci_copyjob_disabled
         $sourcejobs = Get-DbaAgentJob -SqlInstance $TestConfig.instance2
@@ -17,26 +34,6 @@ Describe "Copy-DbaAgentJob" -Tag "IntegrationTests" {
     }
 
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentJob
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Job",
-                "ExcludeJob",
-                "DisableOnSource",
-                "DisableOnDestination",
-                "Force",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
-
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

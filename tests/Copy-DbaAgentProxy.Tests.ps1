@@ -5,24 +5,24 @@ param(
 )
 
 Describe "Copy-DbaAgentProxy" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentProxy
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "ProxyAccount",
-                "ExcludeProxyAccount",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaAgentProxy
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "ProxyAccount",
+            "ExcludeProxyAccount",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

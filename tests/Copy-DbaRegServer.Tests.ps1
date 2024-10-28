@@ -5,24 +5,24 @@ param(
 )
 
 Describe "Copy-DbaRegServer" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaRegServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Group",
-                "SwitchServerName",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaRegServer
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "Group",
+            "SwitchServerName",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

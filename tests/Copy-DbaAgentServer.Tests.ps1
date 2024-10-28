@@ -5,25 +5,25 @@ param(
 )
 
 Describe "Copy-DbaAgentServer" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "DisableJobsOnDestination",
-                "DisableJobsOnSource",
-                "ExcludeServerProperties",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaAgentServer
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "DisableJobsOnDestination",
+            "DisableJobsOnSource",
+            "ExcludeServerProperties",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

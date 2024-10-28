@@ -6,33 +6,30 @@ param(
 
 Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
     BeforeAll {
-        $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category'
+        $command = Get-Command Copy-DbaAgentJobCategory
+
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "Destination",
+            "DestinationSqlCredential",
+            "CategoryType",
+            "JobCategory",
+            "AgentCategory",
+            "OperatorCategory",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
     }
+    
     AfterAll {
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category' -Confirm:$false
     }
 
     Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaAgentJobCategory
-
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "CategoryType",
-                "JobCategory",
-                "AgentCategory",
-                "OperatorCategory",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
-
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

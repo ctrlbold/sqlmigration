@@ -5,28 +5,28 @@ param(
 )
 
 Describe "Expand-DbaDbLogFile" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Expand-DbaDbLogFile
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                'SqlInstance',
-                'SqlCredential',
-                'Database',
-                'ExcludeDatabase',
-                'TargetLogSize',
-                'IncrementSize',
-                'LogFileId',
-                'ShrinkLogFile',
-                'ShrinkSize',
-                'BackupDirectory',
-                'ExcludeDiskSpaceValidation',
-                'EnableException',
-                'Confirm',
-                'WhatIf'
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Expand-DbaDbLogFile
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            'SqlInstance',
+            'SqlCredential',
+            'Database',
+            'ExcludeDatabase',
+            'TargetLogSize',
+            'IncrementSize',
+            'LogFileId',
+            'ShrinkLogFile',
+            'ShrinkSize',
+            'BackupDirectory',
+            'ExcludeDiskSpaceValidation',
+            'EnableException',
+            'Confirm',
+            'WhatIf'
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

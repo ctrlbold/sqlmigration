@@ -5,21 +5,21 @@ param(
 )
 
 Describe "Disable-DbaStartupProcedure" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Disable-DbaStartupProcedure
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "StartupProcedure",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Disable-DbaStartupProcedure
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "StartupProcedure",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

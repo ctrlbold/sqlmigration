@@ -7,25 +7,25 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "Copy-DbaDataCollector" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaDataCollector
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                'Source',
-                'SourceSqlCredential',
-                'Destination',
-                'DestinationSqlCredential',
-                'CollectionSet',
-                'ExcludeCollectionSet',
-                'NoServerReconfig',
-                'Force',
-                'EnableException',
-                'Confirm',
-                'WhatIf'
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaDataCollector
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            'Source',
+            'SourceSqlCredential',
+            'Destination',
+            'DestinationSqlCredential',
+            'CollectionSet',
+            'ExcludeCollectionSet',
+            'NoServerReconfig',
+            'Force',
+            'EnableException',
+            'Confirm',
+            'WhatIf'
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

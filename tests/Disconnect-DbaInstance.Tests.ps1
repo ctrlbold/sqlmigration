@@ -5,18 +5,18 @@ param(
 )
 
 Describe "Disconnect-DbaInstance" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Disconnect-DbaInstance
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Disconnect-DbaInstance
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

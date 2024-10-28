@@ -5,17 +5,17 @@ param(
 )
 
 Describe "Copy-DbaXESessionTemplate" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaXESessionTemplate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Path",
-                "Destination",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaXESessionTemplate
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Path",
+            "Destination",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

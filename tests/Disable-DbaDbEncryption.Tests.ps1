@@ -5,20 +5,20 @@ param(
 )
 
 Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Disable-DbaDbEncryption
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "InputObject",
-                "NoEncryptionKeyDrop",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Disable-DbaDbEncryption
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "InputObject",
+            "NoEncryptionKeyDrop",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

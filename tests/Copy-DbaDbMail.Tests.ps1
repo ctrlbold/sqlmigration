@@ -5,21 +5,21 @@ param(
 )
 
 Describe "Copy-DbaDbMail" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaDbMail
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "Destination",
-                "Type",
-                "SourceSqlCredential",
-                "DestinationSqlCredential",
-                "Force",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaDbMail
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "Destination",
+            "Type",
+            "SourceSqlCredential",
+            "DestinationSqlCredential",
+            "Force",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

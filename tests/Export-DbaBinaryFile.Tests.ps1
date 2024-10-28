@@ -5,28 +5,28 @@ param(
 )
 
 Describe "Export-DbaBinaryFile" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaBinaryFile
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Table",
-                "Schema",
-                "FileNameColumn",
-                "BinaryColumn",
-                "Path",
-                "FilePath",
-                "Query",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaBinaryFile
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Table",
+            "Schema",
+            "FileNameColumn",
+            "BinaryColumn",
+            "Path",
+            "FilePath",
+            "Query",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

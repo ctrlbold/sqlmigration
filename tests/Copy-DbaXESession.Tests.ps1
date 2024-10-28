@@ -5,24 +5,24 @@ param(
 )
 
 Describe "Copy-DbaXESession" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaXESession
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "Destination",
-                "SourceSqlCredential",
-                "DestinationSqlCredential",
-                "XeSession",
-                "ExcludeXeSession",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaXESession
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "Destination",
+            "SourceSqlCredential",
+            "DestinationSqlCredential",
+            "XeSession",
+            "ExcludeXeSession",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

@@ -5,18 +5,18 @@ param(
 )
 
 Describe "Disable-DbaTraceFlag" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Disable-DbaTraceFlag
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "TraceFlag",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Disable-DbaTraceFlag
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "TraceFlag",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

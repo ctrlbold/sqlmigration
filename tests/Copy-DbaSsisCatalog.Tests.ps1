@@ -5,27 +5,27 @@ param(
 )
 
 Describe "Copy-DbaSsisCatalog" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaSsisCatalog
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "Destination",
-                "SourceSqlCredential",
-                "DestinationSqlCredential",
-                "Project",
-                "Folder",
-                "Environment",
-                "CreateCatalogPassword",
-                "EnableSqlClr",
-                "Force",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaSsisCatalog
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "Destination",
+            "SourceSqlCredential",
+            "DestinationSqlCredential",
+            "Project",
+            "Folder",
+            "Environment",
+            "CreateCatalogPassword",
+            "EnableSqlClr",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

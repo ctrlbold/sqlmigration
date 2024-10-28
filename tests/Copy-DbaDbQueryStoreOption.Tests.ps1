@@ -7,25 +7,25 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "Copy-DbaDbQueryStoreOption" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Copy-DbaDbQueryStoreOption
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Source",
-                "SourceSqlCredential",
-                "SourceDatabase",
-                "Destination",
-                "DestinationSqlCredential",
-                "DestinationDatabase",
-                "Exclude",
-                "AllDatabases",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Copy-DbaDbQueryStoreOption
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Source",
+            "SourceSqlCredential",
+            "SourceDatabase",
+            "Destination",
+            "DestinationSqlCredential",
+            "DestinationDatabase",
+            "Exclude",
+            "AllDatabases",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

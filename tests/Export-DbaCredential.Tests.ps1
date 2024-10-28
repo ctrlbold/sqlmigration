@@ -5,24 +5,24 @@ param(
 )
 
 Describe "Export-DbaCredential" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaCredential
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "Identity",
-                "SqlCredential",
-                "Credential",
-                "Path",
-                "FilePath",
-                "ExcludePassword",
-                "Append",
-                "InputObject",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaCredential
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "Identity",
+            "SqlCredential",
+            "Credential",
+            "Path",
+            "FilePath",
+            "ExcludePassword",
+            "Append",
+            "InputObject",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
