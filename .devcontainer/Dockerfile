@@ -20,16 +20,15 @@ RUN echo "export HISTFILE=/commandhistory/.bash_history" >> "/root/.bashrc" \
     && touch /commandhistory/.bash_history \
     && mkdir /workspace
 
-SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
-RUN Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 
-# Install Pester, has to be 4.4.3 because 4.4.2 has bug in Unix machines
 SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
-RUN $ErrorActionPreference='Stop'; Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.3;
+# Set PSGallery as trusted and install Pester and PSScriptAnalyzer
+RUN Set-PSRepository -Name PSGallery -InstallationPolicy Trusted; \
+    $ErrorActionPreference='Stop'; \
+    Install-Module -Name Pester, dbatools.library -Force -SkipPublisherCheck; \
+    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.3; \
+    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2;
 
-# Install PSScriptAnalyzer
-SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
-RUN $ErrorActionPreference='Stop'; Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2;
 
 # Git command prompt
 # Change this if you want to utilize your fork
