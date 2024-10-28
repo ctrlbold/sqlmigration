@@ -5,16 +5,16 @@ param(
 )
 
 Describe "Convert-DbaLSN" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Convert-DbaLSN
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "LSN",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Convert-DbaLSN
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "LSN",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

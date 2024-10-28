@@ -5,36 +5,36 @@ param(
 )
 
 Describe "Add-DbaAgReplica" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaAgReplica
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Name",
-                "ClusterType",
-                "AvailabilityMode",
-                "FailoverMode",
-                "BackupPriority",
-                "ConnectionModeInPrimaryRole",
-                "ConnectionModeInSecondaryRole",
-                "SeedingMode",
-                "Endpoint",
-                "EndpointUrl",
-                "Passthru",
-                "ReadOnlyRoutingList",
-                "ReadonlyRoutingConnectionUrl",
-                "Certificate",
-                "ConfigureXESession",
-                "SessionTimeout",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaAgReplica
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Name",
+            "ClusterType",
+            "AvailabilityMode",
+            "FailoverMode",
+            "BackupPriority",
+            "ConnectionModeInPrimaryRole",
+            "ConnectionModeInSecondaryRole",
+            "SeedingMode",
+            "Endpoint",
+            "EndpointUrl",
+            "Passthru",
+            "ReadOnlyRoutingList",
+            "ReadonlyRoutingConnectionUrl",
+            "Certificate",
+            "ConfigureXESession",
+            "SessionTimeout",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

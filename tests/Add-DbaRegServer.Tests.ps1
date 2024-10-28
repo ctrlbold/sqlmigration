@@ -5,29 +5,29 @@ param(
 )
 
 Describe "Add-DbaRegServer" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaRegServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "ServerName",
-                "Name",
-                "Description",
-                "Group",
-                "ActiveDirectoryTenant",
-                "ActiveDirectoryUserId",
-                "ConnectionString",
-                "OtherParams",
-                "InputObject",
-                "ServerObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaRegServer
+        $expected = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ServerName",
+            "Name",
+            "Description",
+            "Group",
+            "ActiveDirectoryTenant",
+            "ActiveDirectoryUserId",
+            "ConnectionString",
+            "OtherParams",
+            "InputObject",
+            "ServerObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+        $expected += $TestConfig.CommonParameters
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

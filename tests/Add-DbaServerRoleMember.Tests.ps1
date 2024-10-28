@@ -5,23 +5,23 @@ param(
 )
 
 Describe "Add-DbaServerRoleMember" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaServerRoleMember
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "ServerRole",
-                "Login",
-                "Role",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaServerRoleMember
+        $expected = @(
+            "SqlInstance",
+            "SqlCredential",
+            "ServerRole",
+            "Login",
+            "Role",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+        $expected += $TestConfig.CommonParameters
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

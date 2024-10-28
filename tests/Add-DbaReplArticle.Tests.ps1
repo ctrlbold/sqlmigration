@@ -5,25 +5,25 @@ param(
 )
 
 Describe "Add-DbaReplArticle" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaReplArticle
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Publication",
-                "Schema",
-                "Name",
-                "Filter",
-                "CreationScriptOptions",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaReplArticle
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Publication",
+            "Schema",
+            "Name",
+            "Filter",
+            "CreationScriptOptions",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

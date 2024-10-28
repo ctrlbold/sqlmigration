@@ -5,18 +5,18 @@ param(
 )
 
 Describe "Convert-DbaMaskingValue" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Convert-DbaMaskingValue
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "Value",
-                "DataType",
-                "Nullable",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Convert-DbaMaskingValue
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "Value",
+            "DataType",
+            "Nullable",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

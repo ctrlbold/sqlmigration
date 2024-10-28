@@ -5,17 +5,17 @@ param(
 )
 
 Describe "ConvertTo-DbaTimeline" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command ConvertTo-DbaTimeline
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "InputObject",
-                "ExcludeRowLabel",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command ConvertTo-DbaTimeline
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "InputObject",
+            "ExcludeRowLabel",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

@@ -9,25 +9,25 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Add-ReplicationLibrary
 
 Describe "Export-DbaReplServerSetting" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaReplServerSetting
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Path",
-                "FilePath",
-                "ScriptOption",
-                "InputObject",
-                "Encoding",
-                "Passthru",
-                "NoClobber",
-                "Append",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaReplServerSetting
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Path",
+            "FilePath",
+            "ScriptOption",
+            "InputObject",
+            "Encoding",
+            "Passthru",
+            "NoClobber",
+            "Append",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

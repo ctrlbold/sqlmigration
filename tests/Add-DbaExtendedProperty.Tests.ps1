@@ -5,23 +5,23 @@ param(
 )
 
 Describe "Add-DbaExtendedProperty" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaExtendedProperty
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "Name",
-                "Value",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaExtendedProperty
+        $expected = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "Name",
+            "Value",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+        $expected += $TestConfig.CommonParameters
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

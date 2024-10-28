@@ -5,21 +5,21 @@ param(
 )
 
 Describe "Export-DbaDiagnosticQuery" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaDiagnosticQuery
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "InputObject",
-                "ConvertTo",
-                "Path",
-                "Suffix",
-                "NoPlanExport",
-                "NoQueryExport",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaDiagnosticQuery
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "InputObject",
+            "ConvertTo",
+            "Path",
+            "Suffix",
+            "NoPlanExport",
+            "NoQueryExport",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

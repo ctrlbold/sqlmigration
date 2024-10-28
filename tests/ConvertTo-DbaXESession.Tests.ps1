@@ -5,20 +5,20 @@ param(
 )
 
 Describe "ConvertTo-DbaXESession" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command ConvertTo-DbaXESession
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "InputObject",
-                "Name",
-                "OutputScriptOnly",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command ConvertTo-DbaXESession
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "InputObject",
+            "Name",
+            "OutputScriptOnly",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

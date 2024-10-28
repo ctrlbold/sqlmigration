@@ -7,24 +7,24 @@ param(
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 
 Describe "Export-DbaLinkedServer" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaLinkedServer
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "LinkedServer",
-                "SqlCredential",
-                "Credential",
-                "Path",
-                "FilePath",
-                "ExcludePassword",
-                "Append",
-                "InputObject",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaLinkedServer
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "LinkedServer",
+            "SqlCredential",
+            "Credential",
+            "Path",
+            "FilePath",
+            "ExcludePassword",
+            "Append",
+            "InputObject",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

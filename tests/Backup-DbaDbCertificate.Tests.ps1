@@ -5,27 +5,27 @@ param(
 )
 
 Describe "Backup-DbaDbCertificate" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Backup-DbaDbCertificate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Certificate",
-                "Database",
-                "ExcludeDatabase",
-                "EncryptionPassword",
-                "DecryptionPassword",
-                "Path",
-                "Suffix",
-                "InputObject",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Backup-DbaDbCertificate
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Certificate",
+            "Database",
+            "ExcludeDatabase",
+            "EncryptionPassword",
+            "DecryptionPassword",
+            "Path",
+            "Suffix",
+            "InputObject",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

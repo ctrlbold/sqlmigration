@@ -5,31 +5,31 @@ param(
 )
 
 Describe "Export-DbaServerRole" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaServerRole
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                'SqlInstance',
-                'SqlCredential', 
-                'InputObject',
-                'ScriptingOptionsObject',
-                'ServerRole',
-                'ExcludeServerRole',
-                'ExcludeFixedRole',
-                'IncludeRoleMember',
-                'Path',
-                'FilePath',
-                'Passthru',
-                'BatchSeparator',
-                'NoClobber',
-                'Append',
-                'NoPrefix',
-                'Encoding',
-                'EnableException'
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaServerRole
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            'SqlInstance',
+            'SqlCredential', 
+            'InputObject',
+            'ScriptingOptionsObject',
+            'ServerRole',
+            'ExcludeServerRole',
+            'ExcludeFixedRole',
+            'IncludeRoleMember',
+            'Path',
+            'FilePath',
+            'Passthru',
+            'BatchSeparator',
+            'NoClobber',
+            'Append',
+            'NoPrefix',
+            'Encoding',
+            'EnableException'
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

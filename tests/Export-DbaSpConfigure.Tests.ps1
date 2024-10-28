@@ -5,19 +5,19 @@ param(
 )
 
 Describe "Export-DbaSpConfigure" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaSpConfigure
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential", 
-                "Path",
-                "FilePath",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaSpConfigure
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Path",
+            "FilePath",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

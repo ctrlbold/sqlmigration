@@ -5,28 +5,28 @@ param(
 )
 
 Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaAgDatabase
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "AvailabilityGroup",
-                "Database",
-                "Secondary",
-                "SecondarySqlCredential",
-                "InputObject",
-                "SeedingMode",
-                "SharedPath",
-                "UseLastBackup",
-                "AdvancedBackupParams",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaAgDatabase
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "AvailabilityGroup",
+            "Database",
+            "Secondary",
+            "SecondarySqlCredential",
+            "InputObject",
+            "SeedingMode",
+            "SharedPath",
+            "UseLastBackup",
+            "AdvancedBackupParams",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

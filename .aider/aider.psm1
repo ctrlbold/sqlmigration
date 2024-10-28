@@ -291,11 +291,51 @@ function Repair-SmallThing {
         $allObjects = @()
 
         $prompts = @{
-            ReorgParamTest = "Move the `$expected` parameter list AND the `$TestConfig.CommonParameters` part into the BeforeAll block, placing them after the `$command` assignment. Keep them within the BeforeAll block. Do not move or modify the initial `$command` assignment.
+            ReorgParamTest = 'Move the `$expected` parameter list AND the `$command` setting into the BeforeAll block immediately under Describe.
 
-            If you can't find the `$expected` parameter list, do not make any changes.
+            If you cannot find the $expected` parameter list, do not make any changes.
 
-            If it's already where it should be, do not make any changes."
+            BAD:
+            Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
+                Context "Parameter validation" {
+                    BeforeAll {
+                        $command = Get-Command Backup-DbaDbMasterKey
+                        $expected = $TestConfig.CommonParameters
+                        $expected += @(
+                            "SqlInstance",
+                            "SqlCredential",
+                            "Credential",
+                            "Database",
+                            "ExcludeDatabase",
+                            "SecurePassword",
+                            "Path",
+                            "InputObject",
+                            "EnableException",
+                            "WhatIf",
+                            "Confirm"
+                        )
+                    }
+
+            GOOD:
+            Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
+                BeforeAll {
+                    $command = Get-Command Backup-DbaDbMasterKey
+                    $expected = $TestConfig.CommonParameters
+                    $expected += @(
+                        "SqlInstance",
+                        "SqlCredential",
+                        "Credential",
+                        "Database",
+                        "ExcludeDatabase",
+                        "SecurePassword",
+                        "Path",
+                        "InputObject",
+                        "EnableException",
+                        "WhatIf",
+                        "Confirm"
+                    )
+                }
+                Context "Parameter validation" {'
         }
         Write-Verbose "Available prompt types: $($prompts.Keys -join ', ')"
 

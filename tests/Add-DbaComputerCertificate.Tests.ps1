@@ -5,25 +5,25 @@ param(
 )
 
 Describe "Add-DbaComputerCertificate" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Add-DbaComputerCertificate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "ComputerName",
-                "Credential",
-                "SecurePassword",
-                "Certificate",
-                "Path",
-                "Store",
-                "Folder",
-                "Flag",
-                "EnableException",
-                "Confirm",
-                "WhatIf"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Add-DbaComputerCertificate
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "ComputerName",
+            "Credential",
+            "SecurePassword",
+            "Certificate",
+            "Path",
+            "Store",
+            "Folder",
+            "Flag",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

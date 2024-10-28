@@ -5,21 +5,21 @@ param(
 )
 
 Describe "Export-DbaPfDataCollectorSetTemplate" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaPfDataCollectorSetTemplate
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "ComputerName",
-                "Credential", 
-                "CollectorSet",
-                "Path",
-                "FilePath",
-                "InputObject",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaPfDataCollectorSetTemplate
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "ComputerName",
+            "Credential", 
+            "CollectorSet",
+            "Path",
+            "FilePath",
+            "InputObject",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

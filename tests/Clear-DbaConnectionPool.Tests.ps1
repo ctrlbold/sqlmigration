@@ -5,17 +5,17 @@ param(
 )
 
 Describe "Clear-DbaConnectionPool" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Clear-DbaConnectionPool
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "ComputerName",
-                "Credential",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Clear-DbaConnectionPool
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "ComputerName",
+            "Credential",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

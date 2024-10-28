@@ -5,25 +5,25 @@ param(
 )
 
 Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Backup-DbaDbMasterKey
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Credential",
-                "Database",
-                "ExcludeDatabase",
-                "SecurePassword",
-                "Path",
-                "InputObject",
-                "EnableException",
-                "WhatIf",
-                "Confirm"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Backup-DbaDbMasterKey
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Credential",
+            "Database",
+            "ExcludeDatabase",
+            "SecurePassword",
+            "Path",
+            "InputObject",
+            "EnableException",
+            "WhatIf",
+            "Confirm"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }

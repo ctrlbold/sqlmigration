@@ -5,27 +5,27 @@ param(
 )
 
 Describe "Export-DbaDacPackage" -Tag "UnitTests" {
-    Context "Parameter validation" {
-        BeforeAll {
-            $command = Get-Command Export-DbaDacPackage
-            $expected = $TestConfig.CommonParameters
-            $expected += @(
-                "SqlInstance",
-                "SqlCredential",
-                "Database",
-                "ExcludeDatabase",
-                "AllUserDatabases",
-                "Path",
-                "FilePath",
-                "DacOption",
-                "ExtendedParameters",
-                "ExtendedProperties",
-                "Type",
-                "Table",
-                "EnableException"
-            )
-        }
+    BeforeAll {
+        $command = Get-Command Export-DbaDacPackage
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "ExcludeDatabase",
+            "AllUserDatabases",
+            "Path",
+            "FilePath",
+            "DacOption",
+            "ExtendedParameters",
+            "ExtendedProperties",
+            "Type",
+            "Table",
+            "EnableException"
+        )
+    }
 
+    Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
             $command | Should -HaveParameter $PSItem
         }
