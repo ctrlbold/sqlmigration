@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Find-DbaDbDuplicateIndex" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaDbDuplicateIndex
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

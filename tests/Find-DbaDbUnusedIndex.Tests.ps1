@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaDbUnusedIndex" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaDbUnusedIndex
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

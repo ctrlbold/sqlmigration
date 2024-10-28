@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Export-DbaLinkedServer" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaLinkedServer
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "LinkedServer",

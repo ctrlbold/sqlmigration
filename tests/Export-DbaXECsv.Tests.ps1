@@ -7,10 +7,10 @@ param(
 Describe "Export-DbaXECsv" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaXECsv
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "InputObject",
-            "Path",
+            "Path", 
             "FilePath",
             "EnableException"
         )

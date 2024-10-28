@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaDbccStatistic" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDbccStatistic
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

@@ -7,7 +7,7 @@ param(
 Describe "Clear-DbaLatchStatistics" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Clear-DbaLatchStatistics
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

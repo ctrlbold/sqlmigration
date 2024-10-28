@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaLinkedServer" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaLinkedServer
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

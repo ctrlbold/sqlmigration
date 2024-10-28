@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-DbaAgentServer" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAgentServer
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

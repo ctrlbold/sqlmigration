@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaPfDataCollectorCounter" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaPfDataCollectorCounter
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "ComputerName",
             "Credential",

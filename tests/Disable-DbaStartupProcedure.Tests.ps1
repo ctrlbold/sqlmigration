@@ -7,7 +7,7 @@ param(
 Describe "Disable-DbaStartupProcedure" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Disable-DbaStartupProcedure
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

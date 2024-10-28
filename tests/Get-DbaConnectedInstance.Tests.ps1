@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaConnectedInstance" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaConnectedInstance
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
     }
 
     Context "Parameter validation" {

@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaAgDatabase
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

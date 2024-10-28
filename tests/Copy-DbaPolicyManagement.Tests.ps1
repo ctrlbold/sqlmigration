@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaPolicyManagement" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaPolicyManagement
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

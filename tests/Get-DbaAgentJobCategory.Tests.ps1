@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-DbaAgentJobCategory" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAgentJobCategory
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

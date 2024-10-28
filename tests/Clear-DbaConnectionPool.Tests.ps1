@@ -7,7 +7,7 @@ param(
 Describe "Clear-DbaConnectionPool" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Clear-DbaConnectionPool
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "ComputerName",
             "Credential",

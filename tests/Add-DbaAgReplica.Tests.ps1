@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaAgReplica" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaAgReplica
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

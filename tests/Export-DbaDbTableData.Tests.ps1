@@ -7,7 +7,7 @@ param(
 Describe "Export-DbaDbTableData" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaDbTableData
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             'InputObject',
             'Path',

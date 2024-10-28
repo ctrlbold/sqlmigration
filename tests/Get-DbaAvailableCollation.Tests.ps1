@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaAvailableCollation" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAvailableCollation
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

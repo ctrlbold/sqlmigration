@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaAgentSchedule" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaAgentSchedule
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

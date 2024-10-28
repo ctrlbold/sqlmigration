@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
 Describe "Get-DbaAgDatabase" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAgDatabase
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

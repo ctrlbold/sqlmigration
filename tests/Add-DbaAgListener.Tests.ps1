@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaAgListener" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaAgListener
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

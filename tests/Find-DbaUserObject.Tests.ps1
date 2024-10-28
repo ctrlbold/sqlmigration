@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaUserObject" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaUserObject
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

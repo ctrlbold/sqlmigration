@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaComputerSystem" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaComputerSystem
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "ComputerName",
             "Credential",

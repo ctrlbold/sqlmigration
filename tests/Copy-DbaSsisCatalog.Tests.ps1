@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaSsisCatalog" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaSsisCatalog
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "Source",
             "Destination",

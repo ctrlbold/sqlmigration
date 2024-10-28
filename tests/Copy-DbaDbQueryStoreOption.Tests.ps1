@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Copy-DbaDbQueryStoreOption" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaDbQueryStoreOption
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

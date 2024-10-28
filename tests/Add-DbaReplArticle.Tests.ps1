@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaReplArticle" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaReplArticle
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

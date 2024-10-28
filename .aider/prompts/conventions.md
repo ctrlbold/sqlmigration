@@ -128,7 +128,7 @@ Describe "Add-DbaAgReplica" -Tag "IntegrationTests" {
 Describe "Get-DbaDatabase" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDatabase
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

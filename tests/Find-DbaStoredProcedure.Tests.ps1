@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaStoredProcedure" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaStoredProcedure
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

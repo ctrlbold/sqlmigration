@@ -7,7 +7,7 @@ param(
 Describe "Export-DbaSysDbUserObject" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaSysDbUserObject
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             'SqlInstance',
             'SqlCredential',

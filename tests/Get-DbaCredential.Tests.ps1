@@ -19,7 +19,7 @@ Describe "Get-DbaCredential" -Tag "UnitTests" {
             'ExcludeIdentity',
             'EnableException'
         )
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters + $knownParameters
+        $expected = $TestConfig.CommonParameters + $knownParameters
     }
 
     Context "Parameter validation" {

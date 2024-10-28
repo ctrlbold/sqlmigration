@@ -7,7 +7,7 @@ param(
 Describe "Enable-DbaForceNetworkEncryption" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Enable-DbaForceNetworkEncryption
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "Credential",

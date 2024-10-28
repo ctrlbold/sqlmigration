@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaAgentJobStep" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAgentJobStep
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

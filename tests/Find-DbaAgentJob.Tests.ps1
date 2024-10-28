@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaAgentJob" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaAgentJob
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             'SqlInstance',
             'SqlCredential',

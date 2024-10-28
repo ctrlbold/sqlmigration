@@ -7,7 +7,7 @@ param(
 Describe "Expand-DbaDbLogFile" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Expand-DbaDbLogFile
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             'SqlInstance',
             'SqlCredential',

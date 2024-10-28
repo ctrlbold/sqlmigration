@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaClientProtocol" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaClientProtocol
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "ComputerName",
             "Credential",

@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaDbCompatibility" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDbCompatibility
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

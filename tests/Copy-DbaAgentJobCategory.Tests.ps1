@@ -8,7 +8,7 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaAgentJobCategory
 
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",
@@ -24,7 +24,7 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
             "WhatIf"
         )
     }
-
+    
     AfterAll {
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category' -Confirm:$false
     }

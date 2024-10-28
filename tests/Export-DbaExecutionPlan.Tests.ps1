@@ -7,7 +7,7 @@ param(
 Describe "Export-DbaExecutionPlan" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaExecutionPlan
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

@@ -7,7 +7,7 @@ param(
 Describe "Backup-DbaServiceMasterKey" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Backup-DbaServiceMasterKey
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

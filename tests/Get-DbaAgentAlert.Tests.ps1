@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaAgentAlert" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAgentAlert
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

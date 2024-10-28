@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaDbccSessionBuffer" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDbccSessionBuffer
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

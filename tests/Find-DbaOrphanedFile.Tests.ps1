@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaOrphanedFile" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaOrphanedFile
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             'SqlInstance',
             'SqlCredential',

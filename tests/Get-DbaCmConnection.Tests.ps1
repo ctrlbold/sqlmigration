@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaCmConnection" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaCmConnection
-        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
+        $expected = $TestConfig.CommonParameters
         $expected += @(
             "ComputerName",
             "UserName",
