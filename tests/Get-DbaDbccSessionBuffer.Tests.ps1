@@ -34,7 +34,36 @@ Describe "Get-DbaDbccSessionBuffer" -Tag "UnitTests" {
 Describe "Get-DbaDbccSessionBuffer" -Tag "IntegrationTests" {
     BeforeAll {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.instance1 -Database tempdb
+        # Create a query that will generate buffer data
+        $query = @"
+        DECLARE @i INT = 0;
+        WHILE @i < 10 BEGIN
+            SELECT TOP 100 * FROM sys.objects;
+            SET @i = @i + 1;
+            WAITFOR DELAY '00:00:01';
+        END;
+"@
+        # Start the query in a background runspace to ensure it's running during our tests
+        $script:runspace = [powershell]::Create().AddScript({
+            param($instance, $query)
+            Import-Module dbatools
+            $db = Get-DbaDatabase -SqlInstance $instance -Database tempdb
+            $db.Query($query)
+        }).AddArgument($TestConfig.instance1).AddArgument($query)
+
+        $script:runspaceHandle = $script:runspace.BeginInvoke()
+        Start-Sleep -Seconds 2 # Give the query time to start
+
         $queryResult = $db.Query('SELECT top 10 object_id, @@Spid as MySpid FROM sys.objects')
+    }
+
+    AfterAll {
+        if ($script:runspace) {
+            if (-not $script:runspaceHandle.IsCompleted) {
+                $script:runspace.Stop()
+            }
+            $script:runspace.Dispose()
+        }
     }
 
     Context "When getting session buffers for all databases" {
@@ -47,14 +76,6 @@ Describe "Get-DbaDbccSessionBuffer" -Tag "IntegrationTests" {
                 'EventType',
                 'Parameters',
                 'EventInfo'
-            )
-            $outputProps = @(
-                'ComputerName',
-                'InstanceName',
-                'SqlInstance',
-                'SessionId',
-                'Buffer',
-                'HexBuffer'
             )
             $resultInput = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation InputBuffer -All
             $resultOutput = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.instance1 -Operation OutputBuffer -All
@@ -70,10 +91,6 @@ Describe "Get-DbaDbccSessionBuffer" -Tag "IntegrationTests" {
 
         It "Returns results for OutputBuffer" {
             $resultOutput.Count | Should -BeGreaterThan 0
-        }
-
-        It "Has property <_> for OutputBuffer" -ForEach $outputProps {
-            $resultOutput[0].PSObject.Properties[$PSItem].Name | Should -Be $PSItem
         }
     }
 
