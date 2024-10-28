@@ -10,7 +10,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaDbCheckConstraint" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDbCheckConstraint
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

@@ -7,7 +7,7 @@ param(
 Describe "Disable-DbaDbEncryption" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Disable-DbaDbEncryption
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

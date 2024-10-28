@@ -7,7 +7,7 @@ param(
 Describe "Enable-DbaAgHadr" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Enable-DbaAgHadr
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "Credential",

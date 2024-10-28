@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaSystemDbUserObject" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaSystemDbUserObject
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

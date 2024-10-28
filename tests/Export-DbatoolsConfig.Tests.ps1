@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Export-DbatoolsConfig" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbatoolsConfig
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "FullName",
             "Module",

@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaClientAlias" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaClientAlias
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "ComputerName",
             "Credential",

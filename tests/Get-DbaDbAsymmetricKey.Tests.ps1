@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaDbAsymmetricKey" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDbAsymmetricKey
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

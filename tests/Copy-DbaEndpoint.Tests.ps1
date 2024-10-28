@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaEndpoint" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaEndpoint
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

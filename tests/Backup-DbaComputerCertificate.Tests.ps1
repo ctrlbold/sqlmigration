@@ -7,7 +7,7 @@ param(
 Describe "Backup-DbaComputerCertificate" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Backup-DbaComputerCertificate
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SecurePassword",
             "InputObject",

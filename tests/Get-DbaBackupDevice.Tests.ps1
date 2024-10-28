@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaBackupDevice" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaBackupDevice
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

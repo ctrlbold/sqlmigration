@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaDbRoleMember" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaDbRoleMember
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

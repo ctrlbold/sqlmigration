@@ -7,7 +7,7 @@ param(
 Describe "Export-DbaBinaryFile" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaBinaryFile
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

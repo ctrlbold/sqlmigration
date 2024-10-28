@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaDbMirrorMonitor" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaDbMirrorMonitor
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

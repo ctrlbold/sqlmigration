@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaDbDisabledIndex" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaDbDisabledIndex
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

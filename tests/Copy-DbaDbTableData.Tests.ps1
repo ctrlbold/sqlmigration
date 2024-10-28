@@ -8,7 +8,7 @@ Describe "Copy-DbaDbTableData" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Copy-DbaDbTableData
-            $expected = $TestConfig.CommonParameters
+            $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
             $expected += @(
                 'SqlInstance',
                 'SqlCredential',

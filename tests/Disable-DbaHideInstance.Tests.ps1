@@ -7,7 +7,7 @@ param(
 Describe "Disable-DbaHideInstance" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Disable-DbaHideInstance
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "Credential",

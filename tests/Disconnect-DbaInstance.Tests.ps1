@@ -7,7 +7,7 @@ param(
 Describe "Disconnect-DbaInstance" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Disconnect-DbaInstance
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "InputObject",
             "EnableException",

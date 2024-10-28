@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaAgentProxy" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaAgentProxy
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

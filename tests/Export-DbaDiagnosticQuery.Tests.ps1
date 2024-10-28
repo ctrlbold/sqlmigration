@@ -7,7 +7,7 @@ param(
 Describe "Export-DbaDiagnosticQuery" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaDiagnosticQuery
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "InputObject",
             "ConvertTo",

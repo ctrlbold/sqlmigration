@@ -8,7 +8,7 @@ Describe "Export-DbaRegServer" -Tag "UnitTests" {
     Context "Parameter validation" {
         BeforeAll {
             $command = Get-Command Export-DbaRegServer
-            $expected = $TestConfig.CommonParameters
+            $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
             $expected += @(
                 "SqlInstance",
                 "SqlCredential",

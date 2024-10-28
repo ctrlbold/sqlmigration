@@ -7,10 +7,10 @@ param(
 Describe "Export-DbaPfDataCollectorSetTemplate" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaPfDataCollectorSetTemplate
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "ComputerName",
-            "Credential", 
+            "Credential",
             "CollectorSet",
             "Path",
             "FilePath",

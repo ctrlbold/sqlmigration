@@ -7,7 +7,7 @@ param(
 Describe "ConvertTo-DbaTimeline" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command ConvertTo-DbaTimeline
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "InputObject",
             "ExcludeRowLabel",

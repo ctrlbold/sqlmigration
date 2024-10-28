@@ -7,7 +7,7 @@ param(
 Describe "Disable-DbaTraceFlag" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Disable-DbaTraceFlag
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

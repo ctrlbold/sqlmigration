@@ -14,7 +14,7 @@ Describe "Find-DbaBackup" -Tag "UnitTests" {
             'CheckArchiveBit'
             'EnableException'
         )
-        $expected = $TestConfig.CommonParameters + $knownParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters + $knownParameters
     }
 
     Context "Parameter validation" {

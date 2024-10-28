@@ -300,7 +300,7 @@ function Repair-SmallThing {
                 Context "Parameter validation" {
                     BeforeAll {
                         $command = Get-Command Backup-DbaDbMasterKey
-                        $expected = $TestConfig.CommonParameters
+                        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
                         $expected += @(
                             "SqlInstance",
                             "SqlCredential",
@@ -320,7 +320,7 @@ function Repair-SmallThing {
             Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
                 BeforeAll {
                     $command = Get-Command Backup-DbaDbMasterKey
-                    $expected = $TestConfig.CommonParameters
+                    $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
                     $expected += @(
                         "SqlInstance",
                         "SqlCredential",

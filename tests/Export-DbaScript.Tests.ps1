@@ -7,7 +7,7 @@ param(
 Describe "Export-DbaScript" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaScript
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "InputObject",
             "ScriptingOptionsObject",

@@ -7,7 +7,7 @@ param(
 Describe "Convert-DbaLSN" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Convert-DbaLSN
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "LSN",
             "EnableException"

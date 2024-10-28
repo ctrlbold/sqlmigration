@@ -11,7 +11,7 @@ Add-ReplicationLibrary
 Describe "Export-DbaReplServerSetting" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Export-DbaReplServerSetting
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Get-DbaCmObject" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaCmObject
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "ClassName",
             "Query",

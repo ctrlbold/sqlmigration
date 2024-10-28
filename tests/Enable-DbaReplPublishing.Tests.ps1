@@ -9,7 +9,7 @@ Add-ReplicationLibrary
 Describe "Enable-DbaReplPublishing" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Enable-DbaReplPublishing
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

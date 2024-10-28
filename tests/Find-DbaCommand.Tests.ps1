@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaCommand" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaCommand
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             'Pattern',
             'Tag',

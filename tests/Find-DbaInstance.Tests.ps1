@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Find-DbaInstance" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaInstance
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "ComputerName",
             "DiscoveryType",

@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaAvailabilityGroup" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAvailabilityGroup
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

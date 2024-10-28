@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaAgBackupHistory" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaAgBackupHistory
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

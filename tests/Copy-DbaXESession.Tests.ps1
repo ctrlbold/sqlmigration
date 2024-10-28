@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaXESession" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaXESession
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "Destination",

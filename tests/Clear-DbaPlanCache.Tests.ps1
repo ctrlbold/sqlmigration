@@ -7,7 +7,7 @@ param(
 Describe "Clear-DbaPlanCache" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Clear-DbaPlanCache
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

@@ -17,7 +17,7 @@ Describe "Get-DbaDbCertificate" -Tag "UnitTests" {
             'InputObject'
             'EnableException'
         )
-        $expected = $TestConfig.CommonParameters + $knownParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters + $knownParameters
     }
 
     Context "Parameter validation" {

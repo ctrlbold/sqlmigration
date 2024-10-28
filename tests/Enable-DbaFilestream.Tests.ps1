@@ -7,7 +7,7 @@ param(
 Describe "Enable-DbaFilestream" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Enable-DbaFilestream
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",
@@ -37,7 +37,7 @@ Describe "Enable-DbaFilestream" -Tag "IntegrationTests" {
     BeforeAll {
         $global:OriginalFileStream = Get-DbaFilestream -SqlInstance $TestConfig.instance1
     }
-    
+
     AfterAll {
         if ($global:OriginalFileStream.InstanceAccessLevel -eq 0) {
             Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -Confirm:$false

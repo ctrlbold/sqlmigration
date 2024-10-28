@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaCustomError" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaCustomError
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

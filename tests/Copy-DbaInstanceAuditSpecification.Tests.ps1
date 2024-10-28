@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaInstanceAuditSpecification" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaInstanceAuditSpecification
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

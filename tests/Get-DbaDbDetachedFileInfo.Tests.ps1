@@ -7,7 +7,7 @@ param(
 Describe "Get-DbaDbDetachedFileInfo" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Get-DbaDbDetachedFileInfo
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

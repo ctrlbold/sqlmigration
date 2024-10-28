@@ -7,7 +7,7 @@ param(
 Describe "Add-DbaRegServerGroup" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Add-DbaRegServerGroup
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

@@ -7,7 +7,7 @@ param(
 Describe "Find-DbaTrigger" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaTrigger
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             'SqlInstance',
             'SqlCredential',

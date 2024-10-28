@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaDbMail" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaDbMail
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "Destination",

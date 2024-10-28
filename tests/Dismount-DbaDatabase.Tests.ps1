@@ -7,7 +7,7 @@ param(
 Describe "Dismount-DbaDatabase" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Dismount-DbaDatabase
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

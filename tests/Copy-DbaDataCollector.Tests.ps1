@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Copy-DbaDataCollector" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaDataCollector
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             'Source',
             'SourceSqlCredential',

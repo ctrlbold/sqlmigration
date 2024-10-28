@@ -11,7 +11,7 @@ Add-ReplicationLibrary
 Describe "Disable-DbaReplDistributor" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Disable-DbaReplDistributor
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

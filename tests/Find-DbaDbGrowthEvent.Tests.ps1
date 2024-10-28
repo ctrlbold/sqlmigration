@@ -9,7 +9,7 @@ Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
 Describe "Find-DbaDbGrowthEvent" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Find-DbaDbGrowthEvent
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",

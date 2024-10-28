@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaRegServer" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaRegServer
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             "Source",
             "SourceSqlCredential",

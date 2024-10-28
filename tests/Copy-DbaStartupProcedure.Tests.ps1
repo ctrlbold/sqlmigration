@@ -7,7 +7,7 @@ param(
 Describe "Copy-DbaStartupProcedure" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Copy-DbaStartupProcedure
-        $expected = $TestConfig.CommonParameters
+        $expected = [System.Management.Automation.PSCmdlet]::CommonParameters
         $expected += @(
             'Source',
             'SourceSqlCredential',
