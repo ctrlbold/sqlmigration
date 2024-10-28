@@ -49,6 +49,9 @@ if (-not(Test-Path 'C:\Users\appveyor\Documents\DbatoolsExport')) {
     New-Item -Path C:\Users\appveyor\Documents\DbatoolsExport -ItemType Directory | Out-Null
 }
 
+Write-host -Object "appveyor.prep: Install aider" -ForegroundColor DarkGreen
+pip install aider-chat
+aider --help
 
 Write-Host -Object "appveyor.prep: Trust SQL Server Cert (now required)" -ForegroundColor DarkGreen
 Import-Module dbatools.library
