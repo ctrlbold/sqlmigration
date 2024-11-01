@@ -282,6 +282,7 @@ function Repair-SmallThing {
         [switch]$CachePrompts,
         [int]$MapTokens,
         [string]$MapRefresh,
+        [int]$MaxFileSize = 7.5kb,
         [switch]$NoAutoLint,
         [switch]$AutoTest,
         [switch]$ShowPrompts,
@@ -436,7 +437,7 @@ function Repair-SmallThing {
             }
 
             # if file is larger than MaxFileSize, skip
-            if ((Get-Item $filename).Length -gt 7.5kb) {
+            if ((Get-Item $filename).Length -gt $MaxFileSize) {
                 Write-Warning "Skipping $cmdName because it's too large"
                 continue
             }
@@ -466,7 +467,8 @@ function Repair-SmallThing {
                 'First',
                 'Skip',
                 'PromptFilePath',
-                'Type'
+                'Type',
+                'MaxFileSize'
             )
 
             $PSBoundParameters.GetEnumerator() |
