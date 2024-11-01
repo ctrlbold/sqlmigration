@@ -10,7 +10,7 @@ Describe "Export-DbaXESessionTemplate" -Tag "UnitTests" {
         $expectedParams = $TestConfig.CommonParameters
         $expectedParams += @(
             'SqlInstance',
-            'SqlCredential', 
+            'SqlCredential',
             'Session',
             'Path',
             'FilePath',
@@ -35,12 +35,12 @@ Describe "Export-DbaXESessionTemplate" -Tag "IntegrationTests" {
     BeforeAll {
         $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
     }
-    
+
     AfterAll {
         $null = Get-DbaXESession -SqlInstance $TestConfig.instance2 -Session 'Profiler TSQL Duration' | Remove-DbaXESession
         Remove-Item -Path 'C:\windows\temp\Profiler TSQL Duration.xml' -ErrorAction SilentlyContinue
     }
-    
+
     Context "When exporting session template" {
         BeforeAll {
             $session = Import-DbaXESessionTemplate -SqlInstance $TestConfig.instance2 -Template 'Profiler TSQL Duration'

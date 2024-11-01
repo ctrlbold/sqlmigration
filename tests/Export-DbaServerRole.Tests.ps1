@@ -10,7 +10,7 @@ Describe "Export-DbaServerRole" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             'SqlInstance',
-            'SqlCredential', 
+            'SqlCredential',
             'InputObject',
             'ScriptingOptionsObject',
             'ServerRole',
@@ -45,7 +45,7 @@ Describe "Export-DbaServerRole" -Tags "IntegrationTests" {
     BeforeAll {
         $AltExportPath = "$env:USERPROFILE\Documents"
         $outputFile = "$AltExportPath\Dbatoolsci_ServerRole.sql"
-        
+
         $random = Get-Random
         $login1 = "dbatoolsci_exportdbaserverrole_login1$random"
         $svRole = "dbatoolsci_ScriptPermissions$random"

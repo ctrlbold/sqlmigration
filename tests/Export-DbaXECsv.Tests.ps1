@@ -10,7 +10,7 @@ Describe "Export-DbaXECsv" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "InputObject",
-            "Path", 
+            "Path",
             "FilePath",
             "EnableException"
         )

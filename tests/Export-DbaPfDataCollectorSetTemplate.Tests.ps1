@@ -10,7 +10,7 @@ Describe "Export-DbaPfDataCollectorSetTemplate" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "ComputerName",
-            "Credential", 
+            "Credential",
             "CollectorSet",
             "Path",
             "FilePath",

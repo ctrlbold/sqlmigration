@@ -10,7 +10,7 @@ Describe "Export-DbaSpConfigure" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Path",
             "FilePath",
             "EnableException"
