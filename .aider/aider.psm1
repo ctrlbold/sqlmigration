@@ -202,6 +202,9 @@ function Repair-Error {
         The path to the JSON file containing error information.
         Defaults to "/workspace/.aider/prompts/errors.json".
 
+    .PARAMETER Model
+        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
+
     .NOTES
         Tags: Testing, Pester, ErrorHandling
         Author: dbatools team
@@ -220,7 +223,8 @@ function Repair-Error {
         [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
         [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
+        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json",
+        [string]$Model
     )
 
     $promptTemplate = Get-Content $PromptFilePath
@@ -252,6 +256,7 @@ function Repair-Error {
             NoStream     = $true
             CachePrompts = $true
             ReadFile     = $CacheFilePath
+            Model        = $Model
         }
 
         Invoke-Aider @aiderParams
@@ -713,6 +718,9 @@ function Repair-Error {
         The path to the JSON file containing error information.
         Defaults to "/workspace/.aider/prompts/errors.json".
 
+    .PARAMETER Model
+        The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
+
     .NOTES
         Tags: Testing, Pester, ErrorHandling
         Author: dbatools team
@@ -731,7 +739,8 @@ function Repair-Error {
         [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/fix-errors.md",
         [string[]]$CacheFilePath = "/workspace/.aider/prompts/conventions.md",
-        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json"
+        [string]$ErrorFilePath = "/workspace/.aider/prompts/errors.json",
+        [string]$Model
     )
 
     $promptTemplate = Get-Content $PromptFilePath
@@ -763,6 +772,7 @@ function Repair-Error {
             NoStream     = $true
             CachePrompts = $true
             ReadFile     = $CacheFilePath
+            Model        = $Model
         }
 
         Invoke-Aider @aiderParams
