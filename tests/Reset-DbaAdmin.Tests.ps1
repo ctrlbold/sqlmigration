@@ -1,29 +1,61 @@
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
+#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
+param(
+    $ModuleName = "dbatools",
+    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
+)
 
-Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
-    Context "Validate parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object {$_ -notin ('whatif', 'confirm')}
-        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Login', 'SecurePassword', 'Force', 'EnableException'
-        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object {$_}) -DifferenceObject $params).Count ) | Should Be 0
+Describe "Reset-DbaAdmin" -Tag "UnitTests" {
+    BeforeAll {
+        $command = Get-Command Reset-DbaAdmin
+        $expected = $TestConfig.CommonParameters
+        $expected += @(
+            "SqlInstance",
+            "SqlCredential", 
+            "Login",
+            "SecurePassword",
+            "Force",
+            "EnableException",
+            "Confirm",
+            "WhatIf"
+        )
+    }
+
+    Context "Parameter validation" {
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of expected parameters ($($expected.Count))" {
+            $hasparms = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
-    AfterAll {
-        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin | Stop-DbaProcess -WarningAction SilentlyContinue
-        Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin| Remove-DbaLogin -Confirm:$false
+Describe "Reset-DbaAdmin" -Tag "IntegrationTests" {
+    BeforeAll {
+        $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
+        $testLogin = "dbatoolsci_resetadmin"
     }
-    Context "adds a sql login" {
-        It "adds the login as sysadmin" {
-            $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
-            $cred = New-Object System.Management.Automation.PSCredential ("dbatoolsci_resetadmin", $password)
-            $results = Reset-DbaAdmin -SqlInstance $TestConfig.instance2 -Login dbatoolsci_resetadmin -SecurePassword $password -Confirm:$false
-            $results.Name | Should -Be dbatoolsci_resetadmin
+
+    AfterAll {
+        Get-DbaProcess -SqlInstance $TestConfig.instance2 -Login $testLogin | Stop-DbaProcess -WarningAction SilentlyContinue
+        Get-DbaLogin -SqlInstance $TestConfig.instance2 -Login $testLogin | Remove-DbaLogin -Confirm:$false
+    }
+
+    Context "When adding a sql login" {
+        BeforeAll {
+            $splatReset = @{
+                SqlInstance = $TestConfig.instance2
+                Login = $testLogin
+                SecurePassword = $password
+                Confirm = $false
+            }
+            $results = Reset-DbaAdmin @splatReset
+        }
+
+        It "Should add the login as sysadmin" {
+            $results.Name | Should -Be $testLogin
             $results.IsMember("sysadmin") | Should -Be $true
         }
     }
