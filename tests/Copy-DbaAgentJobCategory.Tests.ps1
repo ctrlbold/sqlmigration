@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
     $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
 )
 
 Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
@@ -24,7 +24,7 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
             "WhatIf"
         )
     }
-    
+
     AfterAll {
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category 'dbatoolsci test category' -Confirm:$false
     }

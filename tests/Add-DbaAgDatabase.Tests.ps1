@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
     $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
 )
 
 Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
@@ -28,6 +28,7 @@ Describe "Add-DbaAgDatabase" -Tag "UnitTests" {
 
     Context "Parameter validation" {
         It "Has parameter: <_>" -ForEach $expected {
+            write-warning $PSItem
             $command | Should -HaveParameter $PSItem
         }
 

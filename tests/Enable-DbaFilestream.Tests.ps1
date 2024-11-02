@@ -1,7 +1,7 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
     $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
 )
 
 Describe "Enable-DbaFilestream" -Tag "UnitTests" {
@@ -37,7 +37,7 @@ Describe "Enable-DbaFilestream" -Tag "IntegrationTests" {
     BeforeAll {
         $global:OriginalFileStream = Get-DbaFilestream -SqlInstance $TestConfig.instance1
     }
-    
+
     AfterAll {
         if ($global:OriginalFileStream.InstanceAccessLevel -eq 0) {
             Disable-DbaFilestream -SqlInstance $TestConfig.instance1 -Confirm:$false

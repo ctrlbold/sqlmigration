@@ -2,7 +2,7 @@
 
 param(
     $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
 )
 
 Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan

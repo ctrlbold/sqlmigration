@@ -1,13 +1,13 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
 param(
     $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
 )
 
 Describe "Enable-DbaStartupProcedure" -Tag "UnitTests" {
     BeforeAll {
         $command = Get-Command Enable-DbaStartupProcedure
-        $expected = ($TestConfig = Get-TestConfig).CommonParameters
+        $expected = ($global:TestConfig = Get-TestConfig).CommonParameters
         $expected += @(
             "SqlInstance",
             "SqlCredential",
