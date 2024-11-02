@@ -32,6 +32,9 @@ function Update-PesterTest {
     .PARAMETER Model
         The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
 
+    .PARAMETER LargeFileModel
+        The AI model to use for files exceeding the MaxFileSize limit. Defaults to "gpt-4o-mini".
+
     .PARAMETER EditFormat
         Specifies the format for edits. Choices include "whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole".
 
@@ -67,7 +70,7 @@ function Update-PesterTest {
         [string]$Model,
         [string]$LargeFileModel = "gpt-4o-mini",
         [ValidateSet("whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole")]
-        [string]$EditFormat
+        [string]$EditFormat = "whole"
     )
     begin {
         $commandsToProcess = @()
@@ -127,9 +130,11 @@ function Update-PesterTest {
             # Determine processing mode based on file size
             if ((Get-Item $filename).Length -gt $MaxFileSize) {
                 # Process large files in segmented passes
-                if ($PSBoundParameters.PrompFilePath) {
-                    $files = $PSBoundParameters.PromptFilePath
+                if ($PSBoundParameters.ContainsKey("PromptFilePath")) {
+                    Write-Verbose "Using specified prompt file for segmented pass"
+                    $files = Get-ChildItem -Path $PSBoundParameters.PromptFilePath
                 } else {
+                    Write-Verbose "Using default prompt files for segmented pass"
                     $files = Get-ChildItem -Path "/workspace/.aider/prompts/segmented" -Filter "*.md"
                 }
 
@@ -146,7 +151,7 @@ function Update-PesterTest {
                             NoStream     = $true
                             CachePrompts = $true
                             Model        = $LargeFileModel
-                            EditFormat   = if ($EditFormat) { $EditFormat } else { "whole" }
+                            EditFormat   = $EditFormat
                         }
 
                         Write-Verbose "Invoking Aider for segmented pass on $filename using $($file.Name)"
@@ -168,7 +173,7 @@ function Update-PesterTest {
                         CachePrompts = $true
                         ReadFile     = $CacheFilePath
                         Model        = $Model
-                        EditFormat   = if ($EditFormat) { $EditFormat } else { "whole" }
+                        EditFormat   = $EditFormat
                     }
 
                     Write-Verbose "Invoking Aider to update test file normally"
