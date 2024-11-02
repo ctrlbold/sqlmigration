@@ -53,13 +53,13 @@ show-repo-map: false
 #aiderignore: .aider/.aiderignore
 
 ## Command to lint PowerShell code using PSScriptAnalyzer
-lint-cmd: "pwsh -Command Invoke-ScriptAnalyzer -Path *.ps1"
+lint-cmd: "Invoke-ScriptAnalyzer -Path *.ps1"
 
 ## Automatically runs tests after code changes using Pester
 auto-test: false
 
 ## Command to run PowerShell tests using Pester
-#test-cmd: "pwsh -Command Invoke-Pester -Path .\\Tests"
+# test-cmd: "pwsh /workspace/tests/Configs/aider.test.ps1 $1"
 
 ## Control verbosity of the output (default: false)
 verbose: false
