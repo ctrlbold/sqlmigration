@@ -32,6 +32,9 @@ function Invoke-ManualPester {
 .PARAMETER ScriptAnalyzer
     Enables checking the called function's code with Invoke-ScriptAnalyzer, with dbatools's profile
 
+.PARAMETER NoReimport
+    By default, dbatools is reimported to ensure the latest version is used. This switch disables reimporting.
+
 .EXAMPLE
     Invoke-ManualPester -Path Find-DbaOrphanedFile.Tests.ps1 -TestIntegration -Coverage -DependencyCoverage -ScriptAnalyzer
 
@@ -95,11 +98,44 @@ function Invoke-ManualPester {
         [switch]$TestIntegration,
         [switch]$Coverage,
         [switch]$DependencyCoverage,
-        [switch]$ScriptAnalyzer
+        [switch]$ScriptAnalyzer,
+        [switch]$NoReimport
     )
     begin {
+        Write-Verbose "Starting"
         Remove-Module -Name Pester -ErrorAction SilentlyContinue
         $stopProcess = $false
+
+
+        # Go up the folder structure until we find the root of the module, where dbatools.psd1 is located
+        function Get-ModuleBase {
+            $startOfSearch = $PSScriptRoot
+            for ($i = 0; $i -lt 10; $i++) {
+                if (Test-Path (Join-Path $startOfSearch 'dbatools.psd1')) {
+                    $ModuleBase = $startOfSearch
+                    break
+                }
+                $startOfSearch = Split-Path -Path $startOfSearch -Parent
+            }
+            return $ModuleBase
+        }
+
+        $ModuleBase = Get-ModuleBase
+
+        if (-not $NoReimport) {
+            Remove-Module dbatools -ErrorAction Ignore
+            $splat = @{
+                Name                = "$ModuleBase\dbatools.psm1"
+                DisableNameChecking = $true
+                Force               = $true
+                NoClobber           = $true
+                ErrorAction         = "SilentlyContinue"
+                WarningAction       = "SilentlyContinue"
+                Global              = $true
+            }
+            Import-Module @splat
+        }
+
         function Get-CoverageIndications($Path, $ModuleBase) {
             # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
             $CBHRex = [regex]'(?smi)<#(.*)#>'
@@ -145,19 +181,6 @@ function Invoke-ManualPester {
                 return '5'
             }
             return '4'
-        }
-
-        # Go up the folder structure until we find the root of the module, where dbatools.psd1 is located
-        function Get-ModuleBase {
-            $startOfSearch = $PSScriptRoot
-            for ($i = 0; $i -lt 10; $i++) {
-                if (Test-Path (Join-Path $startOfSearch 'dbatools.psd1')) {
-                    $ModuleBase = $startOfSearch
-                    break
-                }
-                $startOfSearch = Split-Path -Path $startOfSearch -Parent
-            }
-            return $ModuleBase
         }
 
         function Write-DetailedMessage($message) {
@@ -219,23 +242,10 @@ function Invoke-ManualPester {
             return
         }
 
-
-        $ModuleBase = Get-ModuleBase
-
         $gitPath = Join-Path $ModuleBase '.git'
         if (-not(Test-Path $gitPath -Type Container)) {
             $null = New-Item -Type Container -Path $gitPath -Force
         }
-
-        #removes previously imported dbatools, if any
-        # No need the force will do it
-        #Remove-Module dbatools -ErrorAction Ignore
-        #imports the module making sure DLL is loaded ok
-        #Write-DetailedMessage "Importing dbatools psd1"
-        #Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -Force -NoClobber -ErrorAction SilentlyContinue
-        #imports the psm1 to be able to use internal functions in tests
-        Write-DetailedMessage "Importing dbatools psm1"
-        Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force -NoClobber -ErrorAction SilentlyContinue
 
         $ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
