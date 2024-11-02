@@ -178,16 +178,15 @@ function Update-PesterTest {
 
                     Write-Verbose "Invoking Aider to update test file normally"
                     Invoke-Aider @aiderParams
-
-                    if (-not $NoTest) {
-                        if ($script:xplat -contains $cmdName) {
-                            Write-Warning "Running integration and unit tests for $filename"
-                            aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 -TestIntegration -ScriptAnalyzer $filename"
-                        } else {
-                            Write-Warning "Running unit tests for $filename"
-                            aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $filename"
-                        }
-                    }
+                }
+            }
+            if (-not $NoTest) {
+                if ($script:xplat -contains $cmdName) {
+                    Write-Warning "Running integration and unit tests for $filename"
+                    aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 -TestIntegration -ScriptAnalyzer $filename"
+                } else {
+                    Write-Warning "Running unit tests for $filename"
+                    aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $filename"
                 }
             }
         }
