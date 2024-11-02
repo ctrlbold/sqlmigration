@@ -68,7 +68,7 @@ function Update-PesterTest {
         [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md", "/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 7.5kb,
         [string]$Model,
-        [string]$LargeFileModel = "gpt-4o-mini",
+        [string]$LargeFileModel = "azure/gpt-4o-mini",
         [ValidateSet("whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole")]
         [string]$EditFormat = "whole"
     )
