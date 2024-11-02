@@ -98,7 +98,7 @@ function Invoke-ManualPester {
         [switch]$ScriptAnalyzer
     )
     begin {
-        Remove-Module -Name Pester
+        Remove-Module -Name Pester -ErrorAction SilentlyContinue
         $stopProcess = $false
         function Get-CoverageIndications($Path, $ModuleBase) {
             # takes a test file path and figures out what to analyze for coverage (i.e. dependencies)
@@ -231,11 +231,11 @@ function Invoke-ManualPester {
         # No need the force will do it
         #Remove-Module dbatools -ErrorAction Ignore
         #imports the module making sure DLL is loaded ok
-        Write-DetailedMessage "Importing dbatools psd1"
-        Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -Force -NoClobber
+        #Write-DetailedMessage "Importing dbatools psd1"
+        #Import-Module "$ModuleBase\dbatools.psd1" -DisableNameChecking -Force -NoClobber -ErrorAction SilentlyContinue
         #imports the psm1 to be able to use internal functions in tests
         Write-DetailedMessage "Importing dbatools psm1"
-        Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force -NoClobber
+        Import-Module "$ModuleBase\dbatools.psm1" -DisableNameChecking -Force -NoClobber -ErrorAction SilentlyContinue
 
         $ScriptAnalyzerRulesExclude = @('PSUseOutputTypeCorrectly', 'PSAvoidUsingPlainTextForPassword', 'PSUseBOMForUnicodeEncodedFile')
 
