@@ -26,15 +26,14 @@ function Update-PesterTest {
         The path to the file containing cached conventions.
 
     .PARAMETER MaxFileSize
-        The maximum size of test files to process, in bytes. Files larger than this will be skipped.
-        Defaults to 7.5kb.
+        The maximum size of test files to process in a single pass, in bytes. Files larger than this will be processed
+        in segmented passes using prompts from the segmented directory. Defaults to 7.5kb.
 
     .PARAMETER Model
         The AI model to use (e.g., azure/gpt-4o, gpt-4o-mini, claude-3-5-sonnet).
 
-    .NOTES
-        Tags: Testing, Pester
-        Author: dbatools team
+    .PARAMETER EditFormat
+        Specifies the format for edits. Choices include "whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole".
 
     .EXAMPLE
         PS C:\> Update-PesterTest
@@ -63,24 +62,19 @@ function Update-PesterTest {
         [int]$First = 10000,
         [int]$Skip,
         [string[]]$PromptFilePath = "/workspace/.aider/prompts/template.md",
-        [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md","/workspace/private/testing/Get-TestConfig.ps1"),
+        [string[]]$CacheFilePath = @("/workspace/.aider/prompts/conventions.md", "/workspace/private/testing/Get-TestConfig.ps1"),
         [int]$MaxFileSize = 7.5kb,
-        [string]$Model
+        [string]$Model,
+        [string]$LargeFileModel = "gpt-4o-mini",
+        [ValidateSet("whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole")]
+        [string]$EditFormat
     )
     begin {
-        # Full prompt path
-        if (-not (Get-Module dbatools.library -ListAvailable)) {
-            Write-Warning "dbatools.library not found, installing"
-            Install-Module dbatools.library -Scope CurrentUser -Force
-        }
-        Import-Module /workspace/dbatools.psm1 -Force
-
-        $promptTemplate = Get-Content $PromptFilePath
-        $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
         $commandsToProcess = @()
     }
 
     process {
+        # Populate commandsToProcess based on InputObject or fallback to default
         if ($InputObject) {
             foreach ($item in $InputObject) {
                 Write-Verbose "Processing input object of type: $($item.GetType().FullName)"
@@ -89,30 +83,18 @@ function Update-PesterTest {
                     $commandsToProcess += $item
                 } elseif ($item -is [System.IO.FileInfo]) {
                     $path = $item.FullName
-                    Write-Verbose "Processing FileInfo path: $path"
                     if (Test-Path $path) {
                         $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($path) -replace '\.Tests$', ''
-                        Write-Verbose "Extracted command name: $cmdName"
                         $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
-                        if ($cmd) {
-                            $commandsToProcess += $cmd
-                        } else {
-                            Write-Warning "Could not find command for test file: $path"
-                        }
+                        if ($cmd) { $commandsToProcess += $cmd }
+                        else { Write-Warning "No command found for test file: $path" }
                     }
                 } elseif ($item -is [string]) {
-                    Write-Verbose "Processing string path: $item"
                     if (Test-Path $item) {
                         $cmdName = [System.IO.Path]::GetFileNameWithoutExtension($item) -replace '\.Tests$', ''
-                        Write-Verbose "Extracted command name: $cmdName"
                         $cmd = Get-Command -Name $cmdName -ErrorAction SilentlyContinue
-                        if ($cmd) {
-                            $commandsToProcess += $cmd
-                        } else {
-                            Write-Warning "Could not find command for test file: $item"
-                        }
-                    } else {
-                        Write-Warning "File not found: $item"
+                        if ($cmd) { $commandsToProcess += $cmd }
+                        else { Write-Warning "No command found for test file: $item" }
                     }
                 } else {
                     Write-Warning "Unsupported input type: $($item.GetType().FullName)"
@@ -122,58 +104,82 @@ function Update-PesterTest {
     }
 
     end {
+        # Get default commands if no specific InputObject provided
         if (-not $commandsToProcess) {
-            Write-Verbose "No input objects provided, getting commands from dbatools module"
             $commandsToProcess = Get-Command -Module dbatools -Type Function, Cmdlet | Select-Object -First $First -Skip $Skip
         }
 
         foreach ($command in $commandsToProcess) {
             $cmdName = $command.Name
             $filename = "/workspace/tests/$cmdName.Tests.ps1"
-
-            Write-Verbose "Processing command: $cmdName"
-            Write-Verbose "Test file path: $filename"
+            $parameters = $command.Parameters.Values | Where-Object Name -notin $commonParameters
 
             if (-not (Test-Path $filename)) {
                 Write-Warning "No tests found for $cmdName"
-                Write-Warning "$filename not found"
                 continue
             }
 
-            <# Check if it's already been converted #>
             if (Select-String -Path $filename -Pattern "HaveParameter") {
-                Write-Warning "Skipping $cmdName because it's already been converted to Pester v5"
+                Write-Warning "Skipping $cmdName, already converted to Pester v5"
                 continue
             }
 
-            # if file is larger than MaxFileSize, skip
+            # Determine processing mode based on file size
             if ((Get-Item $filename).Length -gt $MaxFileSize) {
-                Write-Warning "Skipping $cmdName because it's too large"
-                continue
-            }
-
-            $parameters = $command.Parameters.Values | Where-Object Name -notin $commonParameters
-            $cmdPrompt = $promptTemplate -replace "--CMDNAME--", $cmdName
-            $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
-            $cmdprompt = $cmdPrompt -join "`n"
-
-            if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format and/or style")) {
-                $aiderParams = @{
-                    Message      = $cmdPrompt
-                    File         = $filename
-                    YesAlways    = $true
-                    NoStream     = $true
-                    CachePrompts = $true
-                    ReadFile     = $CacheFilePath
-                    Model        = $Model
+                # Process large files in segmented passes
+                if ($PSBoundParameters.PrompFilePath) {
+                    $files = $PSBoundParameters.PromptFilePath
+                } else {
+                    $files = Get-ChildItem -Path "/workspace/.aider/prompts/segmented" -Filter "*.md"
                 }
 
-                Write-Verbose "Invoking Aider to update test file"
-                Invoke-Aider @aiderParams
+                foreach ($file in $files) {
+                    $cmdPrompt = (Get-Content $file.FullName) -join "`n"
+                    $cmdPrompt = $cmdPrompt -replace "--CMDNAME--", $cmdName
+                    $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
+
+                    if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format - Segmented Pass")) {
+                        $aiderParams = @{
+                            Message      = $cmdPrompt
+                            File         = $filename
+                            YesAlways    = $true
+                            NoStream     = $true
+                            CachePrompts = $true
+                            Model        = $LargeFileModel
+                            EditFormat   = if ($EditFormat) { $EditFormat } else { "whole" }
+                        }
+
+                        Write-Verbose "Invoking Aider for segmented pass on $filename using $($file.Name)"
+                        Invoke-Aider @aiderParams
+                    }
+                }
+            } else {
+                # Process smaller files normally
+                $cmdPrompt = (Get-Content $PromptFilePath) -join "`n"
+                $cmdPrompt = $cmdPrompt -replace "--CMDNAME--", $cmdName
+                $cmdPrompt = $cmdPrompt -replace "--PARMZ--", ($parameters.Name -join "`n")
+
+                if ($PSCmdlet.ShouldProcess($filename, "Update Pester test to v5 format")) {
+                    $aiderParams = @{
+                        Message      = $cmdPrompt
+                        File         = $filename
+                        YesAlways    = $true
+                        NoStream     = $true
+                        CachePrompts = $true
+                        ReadFile     = $CacheFilePath
+                        Model        = $Model
+                        EditFormat   = if ($EditFormat) { $EditFormat } else { "whole" }
+                    }
+
+                    Write-Verbose "Invoking Aider to update test file normally"
+                    Invoke-Aider @aiderParams
+                }
             }
         }
     }
 }
+
+
 
 function Repair-Error {
     <#
@@ -273,7 +279,7 @@ function Repair-SmallThing {
         [int]$Skip,
         [string]$Model = "azure/gpt-4o-mini",
         [string[]]$PromptFilePath,
-        [ValidateSet("ReorgParamTest")]
+        [ValidateSet("ReorgParamTest", "StartNewFile", "RefactorParamTest", "RemoveLines")]
         [string]$Type,
         [string]$EditorModel,
         [switch]$NoPretty,
@@ -286,6 +292,7 @@ function Repair-SmallThing {
         [switch]$NoAutoLint,
         [switch]$AutoTest,
         [switch]$ShowPrompts,
+        [ValidateSet("whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole")]
         [string]$EditFormat,
         [string]$MessageFile,
         [string[]]$ReadFile,
@@ -297,32 +304,9 @@ function Repair-SmallThing {
         $allObjects = @()
 
         $prompts = @{
-            ReorgParamTest = 'Move the `$expected` parameter list AND the `$command` setting into the BeforeAll block immediately under Describe.
+            ReorgParamTest = '
+            The parameter test should look like this (not actual parameters)
 
-            If you cannot find the $expected` parameter list, do not make any changes.
-
-            BAD:
-            Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
-                Context "Parameter validation" {
-                    BeforeAll {
-                        $command = Get-Command Backup-DbaDbMasterKey
-                        $expected = $TestConfig.CommonParameters
-                        $expected += @(
-                            "SqlInstance",
-                            "SqlCredential",
-                            "Credential",
-                            "Database",
-                            "ExcludeDatabase",
-                            "SecurePassword",
-                            "Path",
-                            "InputObject",
-                            "EnableException",
-                            "WhatIf",
-                            "Confirm"
-                        )
-                    }
-
-            GOOD:
             Describe "Backup-DbaDbMasterKey" -Tag "UnitTests" {
                 BeforeAll {
                     $command = Get-Command Backup-DbaDbMasterKey
@@ -344,16 +328,6 @@ function Repair-SmallThing {
                 Context "Parameter validation" {'
         }
         Write-Verbose "Available prompt types: $($prompts.Keys -join ', ')"
-
-        Write-Verbose "Checking for dbatools.library module"
-        if (-not (Get-Module dbatools.library -ListAvailable)) {
-            Write-Verbose "dbatools.library not found, installing"
-            Install-Module dbatools.library -Scope CurrentUser -Force -Verbose:$false
-        }
-        if (-not (Get-Module dbatools)) {
-            Write-Verbose "Importing dbatools module from /workspace/dbatools.psm1"
-            Import-Module /workspace/dbatools.psm1 -Force -Verbose:$false
-        }
 
         if ($PromptFilePath) {
             Write-Verbose "Loading prompt template from $PromptFilePath"
@@ -588,6 +562,7 @@ function Invoke-Aider {
         [switch]$NoAutoLint,
         [switch]$AutoTest,
         [switch]$ShowPrompts,
+        [ValidateSet("whole", "diff", "diff-fenced", "unified diff", "editor-diff", "editor-whole")]
         [string]$EditFormat,
         [string]$MessageFile,
         [string[]]$ReadFile,
@@ -779,4 +754,16 @@ function Repair-Error {
 
         Invoke-Aider @aiderParams
     }
+}
+
+
+Write-Verbose "Checking for dbatools.library module"
+if (-not (Get-Module dbatools.library -ListAvailable)) {
+    Write-Verbose "dbatools.library not found, installing"
+    Install-Module dbatools.library -Scope CurrentUser -Force -Verbose:$false
+}
+
+if (-not (Get-Command Get-DbaDatabase -ErrorAction SilentlyContinue)) {
+    Write-Verbose "Importing dbatools module from /workspace/dbatools.psm1"
+    Import-Module /workspace/dbatools.psm1 -Force -Verbose:$false
 }
