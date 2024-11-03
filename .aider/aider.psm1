@@ -181,12 +181,14 @@ function Update-PesterTest {
                 }
             }
             if (-not $NoTest) {
-                if ($script:xplat -contains $cmdName) {
-                    Write-Warning "Running integration and unit tests for $filename"
-                    aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 -TestIntegration -ScriptAnalyzer $filename"
-                } else {
-                    Write-Warning "Running unit tests for $filename"
-                    aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $filename"
+                if ($PSCmdlet.ShouldProcess($filename, "Running tests on $filename")) {
+                    if ($script:xplat -contains $cmdName) {
+                        Write-Warning "Running integration and unit tests for $filename"
+                        aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 -TestIntegration -ScriptAnalyzer $filename"
+                    } else {
+                        Write-Warning "Running unit tests for $filename"
+                        aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $filename"
+                    }
                 }
             }
         }
@@ -677,7 +679,7 @@ function Invoke-Aider {
         if ($VerbosePreference -eq 'Continue') {
             Write-Verbose "Executing: aider $($arguments -join ' ')"
         }
-
+        $arguments | write-warning
         aider @arguments
     }
 }
