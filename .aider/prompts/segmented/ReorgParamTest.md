@@ -1,4 +1,4 @@
-### Good Parameter Test
+The command's test should look like this:
 
 ```powershell
 Describe "Get-DbaDatabase" -Tag "UnitTests" {
