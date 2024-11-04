@@ -101,7 +101,7 @@ git: false
 #code-theme: "monokai"
 
 ## edit the whole file
-edit-format: whole
+#edit-format: diff
 
 ## yesss
 yes-always: true

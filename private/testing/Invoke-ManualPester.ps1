@@ -133,7 +133,7 @@ function Invoke-ManualPester {
                 WarningAction       = "SilentlyContinue"
                 Global              = $true
             }
-            Import-Module @splat
+            Import-Module @splat *> $null
         }
 
         function Get-CoverageIndications($Path, $ModuleBase) {
@@ -166,7 +166,7 @@ function Invoke-ManualPester {
                 # exclude always used functions ?!
                 if ($f -in ('Connect-DbaInstance', 'Select-DefaultView', 'Stop-Function', 'Write-Message')) { continue }
                 # can I find a correspondence to a physical file (again, on the convenience of having Get-DbaFoo.ps1 actually defining Get-DbaFoo)?
-                $res = $allfiles | Where-Object { $_.Name.Replace('.ps1', '') -eq $f }
+                $res = $allfiles | Where-Object { $PSItem.Name.Replace('.ps1', '') -eq $f }
                 if ($res.count -gt 0) {
                     $testpaths += $res.FullName
                 }
@@ -189,53 +189,75 @@ function Invoke-ManualPester {
             }
         }
 
-        $invokeFormatterVersion = (Get-Command Invoke-Formatter -ErrorAction SilentlyContinue).Version
-        $HasScriptAnalyzer = $null -ne $invokeFormatterVersion
-        $MinimumPesterVersion = [Version] '4.0.0.0' # Because this is when -Show was introduced
-        $MaximumPesterVersion = [Version] '6.0.0.0' # Because we have either pester4 or pester5 tests
-        $PesterVersion = (Get-Command Invoke-Pester -ErrorAction SilentlyContinue).Version
-        $HasPester = $null -ne $PesterVersion
-        $ScriptAnalyzerCorrectVersion = '1.18.2'
+        # Version requirements
+        $ScriptAnalyzerRequiredVersion = '1.18.2'
+        $MinimumPesterVersion = [Version]'4.0.0.0'
+        $MaximumPesterVersion = [Version]'6.0.0.0'
+        $TargetPesterVersion = [Version]'5.3.3'
 
-        if (!($HasScriptAnalyzer)) {
-            Write-Warning "Please install PSScriptAnalyzer"
-            Write-Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerCorrectVersion'"
-            Write-Warning "     or go to https://github.com/PowerShell/PSScriptAnalyzer"
-        } else {
-            if ($invokeFormatterVersion -ne $ScriptAnalyzerCorrectVersion) {
-                Remove-Module PSScriptAnalyzer
-                try {
-                    Import-Module PSScriptAnalyzer -RequiredVersion $ScriptAnalyzerCorrectVersion -ErrorAction Stop
-                } catch {
-                    Write-Warning "Please install PSScriptAnalyzer $ScriptAnalyzerCorrectVersion"
-                    Write-Warning "     Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerCorrectVersion'"
-                }
+        # Get all required modules at once (single expensive operation)
+        $availableModules = @{}
+        $foundModules = Get-Module -Name Pester, PSScriptAnalyzer -ListAvailable
+
+        foreach ($module in $foundModules) {
+            if (!$availableModules[$module.Name]) {
+                $availableModules[$module.Name] = @()
+            }
+            $availableModules[$module.Name] += $module
+        }
+
+        # Sort versions once
+        $moduleNames = @($availableModules.Keys)
+        foreach ($name in $moduleNames) {
+            $availableModules[$name] = $availableModules[$name] | Sort-Object Version -Descending
+        }
+
+        # If target Pester not found, use highest 5.x version
+        if (-not ($availableModules.Pester | Where-Object Version -eq $TargetPesterVersion)) {
+            $TargetPesterVersion = ($availableModules.Pester | Where-Object { $_.Version.Major -eq 5 } | Select-Object -First 1).Version
+        }
+
+        # PSScriptAnalyzer checks
+        if (-not $availableModules.PSScriptAnalyzer) {
+            Write-Warning "PSScriptAnalyzer not found. Please install with:"
+            Write-Warning "Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerRequiredVersion'"
+            Write-Warning "or go to https://github.com/PowerShell/PSScriptAnalyzer"
+            return
+        }
+
+        $importedAnalyzerModule = Get-Module -Name PSScriptAnalyzer
+        if (-not $importedAnalyzerModule -or $importedAnalyzerModule.Version.ToString() -ne $ScriptAnalyzerRequiredVersion) {
+            if ($importedAnalyzerModule) { Remove-Module PSScriptAnalyzer -Force }
+            try {
+                Import-Module PSScriptAnalyzer -RequiredVersion $ScriptAnalyzerRequiredVersion -ErrorAction Stop
+            } catch {
+                Write-Warning "Failed to import PSScriptAnalyzer $ScriptAnalyzerRequiredVersion"
+                Write-Warning "Please install correct version: Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerRequiredVersion'"
+                return
             }
         }
 
-        if (!($HasPester)) {
-            Write-Warning "Please install Pester"
-            Write-Warning "     Install-Module -Name Pester -Force -SkipPublisherCheck"
-            Write-Warning "     or go to https://github.com/pester/Pester"
-        }
-        if ($PesterVersion -lt $MinimumPesterVersion) {
-            Write-Warning "Please update Pester to at least 3.4.5"
-            Write-Warning "     Install-Module -Name Pester  -MaximumVersion '4.10' -Force -SkipPublisherCheck"
-            Write-Warning "     or go to https://github.com/pester/Pester"
-        }
-        if ($PesterVersion -gt $MaximumPesterVersion) {
-            Write-Warning "Please get Pester to the 5.* release"
-            Write-Warning "     Install-Module -Name Pester  -MaximumVersion '5.6.1' -Force -SkipPublisherCheck"
-            Write-Warning "     or go to https://github.com/pester/Pester"
+        # Pester checks
+        if (-not $availableModules.Pester) {
+            Write-Warning "Pester not found. Please install with:"
+            Write-Warning "Install-Module -Name Pester -Force -SkipPublisherCheck"
+            Write-Warning "or go to https://github.com/pester/Pester"
+            return
         }
 
-        if (($HasPester -and $HasScriptAnalyzer -and ($PesterVersion -ge $MinimumPesterVersion) -and ($PesterVersion -lt $MaximumPesterVersion) -and ($invokeFormatterVersion -eq $ScriptAnalyzerCorrectVersion)) -eq $false) {
-            Write-Warning "Exiting..."
-            $stopProcess = $true
+        $importedPesterModule = Get-Module -Name Pester
+        $highestVersion = $availableModules.Pester[0].Version
+
+        if ($highestVersion -lt $MinimumPesterVersion -or $highestVersion -gt $MaximumPesterVersion) {
+            Write-Warning "Pester version must be between $MinimumPesterVersion and $MaximumPesterVersion"
+            Write-Warning "Install-Module -Name Pester -RequiredVersion $TargetPesterVersion -Force -SkipPublisherCheck"
+            return
         }
 
-
-
+        if ($importedPesterModule -and $importedPesterModule.Version -ne $TargetPesterVersion) {
+            Remove-Module Pester -Force
+            Import-Module Pester -RequiredVersion $TargetPesterVersion -Force
+        }
     }
     process  {
         if ($stopProcess) {

@@ -184,10 +184,12 @@ function Update-PesterTest {
                 if ($PSCmdlet.ShouldProcess($filename, "Running tests on $filename")) {
                     if ($script:xplat -contains $cmdName) {
                         Write-Warning "Running integration and unit tests for $filename"
-                        aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 -TestIntegration -ScriptAnalyzer $filename"
+                        #aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 -TestIntegration -ScriptAnalyzer $filename"
+                        Test-Command -Path $filename -TestIntegration -ScriptAnalyzer
                     } else {
                         Write-Warning "Running unit tests for $filename"
-                        aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $filename"
+                        #aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $filename"
+                        Test-Command -Path $filename -ScriptAnalyzer
                     }
                 }
             }
@@ -195,7 +197,49 @@ function Update-PesterTest {
     }
 }
 
+function Test-Command {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('FullName')]
+        [string[]]$Path,
+        [ValidateSet('None', 'Normal', 'Detailed', 'Diagnostic')]
+        [string]$Show = "Normal",
+        [switch]$PassThru,
+        [switch]$TestIntegration,
+        [switch]$Coverage,
+        [switch]$DependencyCoverage,
+        [switch]$ScriptAnalyzer,
+        [switch]$NoReimport
+    )
+    process {
+        $cmdArgs = @()
 
+        # Build command line arguments
+        if ($PSBoundParameters.ContainsKey('Path')) {
+            $cmdArgs += $Path
+        }
+        if ($PSBoundParameters.ContainsKey('Show')) {
+            $cmdArgs += "-Show"
+            $cmdArgs += $Show
+        }
+        if ($PassThru) { $cmdArgs += "-PassThru" }
+        if ($TestIntegration) { $cmdArgs += "-TestIntegration" }
+        if ($Coverage) { $cmdArgs += "-Coverage" }
+        if ($DependencyCoverage) { $cmdArgs += "-DependencyCoverage" }
+        if ($ScriptAnalyzer) { $cmdArgs += "-ScriptAnalyzer" }
+        if ($NoReimport) { $cmdArgs += "-NoReimport" }
+
+        # Convert array to space-separated string
+        $cmdString = $cmdArgs -join ' '
+
+        Write-Warning "Running tests with command: $cmdString"
+        # Call aider with the constructed command string
+        # add a file!!
+        # it stops apparently, do while or 10 times
+        aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $cmdString" --edit-format diff --file $Path
+    }
+}
 
 function Repair-Error {
     <#
@@ -679,7 +723,7 @@ function Invoke-Aider {
         if ($VerbosePreference -eq 'Continue') {
             Write-Verbose "Executing: aider $($arguments -join ' ')"
         }
-        $arguments | write-warning
+
         aider @arguments
     }
 }
