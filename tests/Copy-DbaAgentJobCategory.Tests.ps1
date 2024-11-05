@@ -19,7 +19,9 @@ Describe "Copy-DbaAgentJobCategory" -Tag "UnitTests" {
                 'AgentCategory',
                 'OperatorCategory',
                 'Force',
-                'EnableException'
+                'EnableException',
+                'WhatIf',
+                'Confirm'
             )
         }
 
@@ -46,7 +48,7 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
 
     AfterAll {
         $removeCategoryParams = @{
-            SqlInstance = $TestConfig.instance2
+            SqlInstance = $TestConfig.instance2, $TestConfig.instance3
             Category    = $categoryName
             Confirm     = $false
         }
@@ -69,9 +71,9 @@ Describe "Copy-DbaAgentJobCategory" -Tag "IntegrationTests" {
         }
 
         It "Should skip existing category on second copy" {
-            $results = Copy-DbaAgentJobCategory @copyParams
-            $results.Name | Should -Be $categoryName
-            $results.Status | Should -Be "Skipped"
+            $nextresults = Copy-DbaAgentJobCategory @copyParams
+            $nextresults.Name | Should -Be $categoryName
+            $nextresults.Status | Should -Be "Skipped"
         }
     }
 }
