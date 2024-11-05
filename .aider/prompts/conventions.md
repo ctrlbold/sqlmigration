@@ -28,19 +28,37 @@ Describe "Get-DbaDatabase" -Tag "UnitTests" {
 - Example: "When getting all databases", "When database is offline"
 
 ### Test Code Placement
-- All setup code goes in `BeforeAll` or `BeforeEach` blocks
-- All cleanup code goes in `AfterAll` or `AfterEach` blocks
+- Prefer putting test setup code in the `Describe`'s `BeforeAll` block whenever the setup applies across multiple contexts
+- Use `Context` level `BeforeAll` blocks only for setup specific to that context
+- All cleanup code goes in corresponding `AfterAll` blocks at the same level as their setup
 - All test assertions go in `It` blocks
 - No loose code in `Describe` or `Context` blocks
 
 ```powershell
-Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
-    Context "When getting all databases" {
+Describe "Command-Name" -Tag "IntegrationTests" {
+    BeforeAll {
+        # Shared setup that multiple contexts will use
+        $categoryName = 'dbatoolsci test category'
+        $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.instance2 -Category $categoryName
+    }
+
+    AfterAll {
+        # Cleanup of shared resources
+        $splat = @{
+            SqlInstance = $TestConfig.instance2
+            Category    = $categoryName
+            Confirm     = $false
+        }
+        $null = Remove-DbaAgentJobCategory @splat
+    }
+
+    Context "First scenario" {
         BeforeAll {
-            $results = Get-DbaDatabase
+            # Setup specific only to this context
+            $results = Do-Something
         }
 
-        It "Returns results" {
+        It "should test something" {
             $results | Should -Not -BeNullOrEmpty
         }
     }
