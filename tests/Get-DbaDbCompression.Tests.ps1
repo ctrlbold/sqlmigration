@@ -1,36 +1,19 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
-)
+$commandname = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandpath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
-Describe "Get-DbaDbCompression" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Get-DbaDbCompression
-        $expected = $TestConfig.CommonParameters
-        $expected += @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database",
-            "ExcludeDatabase",
-            "Table",
-            "EnableException"
-        )
-    }
-
-    Context "Parameter validation" {
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Table', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
-Describe "Get-DbaDbCompression" -Tag "IntegrationTests" {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
     BeforeAll {
         $dbname = "dbatoolsci_test_$(Get-Random)"
         $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
@@ -40,36 +23,38 @@ Describe "Get-DbaDbCompression" -Tag "IntegrationTests" {
                                 create clustered index CL_sysallparams on sysallparams (object_id)
                                 create nonclustered index NC_syscols on syscols (precision) include (collation_name)", $dbname)
     }
-
     AfterAll {
         Get-DbaProcess -SqlInstance $TestConfig.instance2 -Database $dbname | Stop-DbaProcess -WarningAction SilentlyContinue
         Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $dbname -Confirm:$false
     }
+    $results = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
 
-    Context "When getting compression information" {
-        BeforeAll {
-            $results = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname
+    Context "Command handles heaps and clustered indexes" {
+        It "Gets results" {
+            $results | Should Not Be $null
+            $results.Database | Get-Unique | Should -Be $dbname
+            $results.DatabaseId | Get-Unique | Should -Be $server.Query("SELECT database_id FROM sys.databases WHERE name = '$dbname'").database_id
         }
-
-        It "Returns results" {
-            $results | Should -Not -BeNullOrEmpty
-            $results.Database | Select-Object -Unique | Should -Be $dbname
-            $results.DatabaseId | Select-Object -Unique | Should -Be $server.Query("SELECT database_id FROM sys.databases WHERE name = '$dbname'").database_id
+        Foreach ($row in $results | Where-Object { $_.IndexId -le 1 }) {
+            It "Should return compression level for object $($row.TableName)" {
+                $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
+            }
         }
-
-        It "Returns correct compression level for object <TableName>" -ForEach @($results | Where-Object { $PSItem.IndexId -le 1 }) {
-            $PSItem.DataCompression | Should -BeIn @('None', 'Row', 'Page')
+    }
+    Context "Command handles nonclustered indexes" {
+        It "Gets results" {
+            $results | Should Not Be $null
         }
-
-        It "Returns correct compression level for nonclustered index <IndexName>" -ForEach @($results | Where-Object { $PSItem.IndexId -gt 1 }) {
-            $PSItem.DataCompression | Should -BeIn @('None', 'Row', 'Page')
+        Foreach ($row in $results | Where-Object { $_.IndexId -gt 1 }) {
+            It "Should return compression level for nonclustered index $($row.IndexName)" {
+                $row.DataCompression | Should BeIn ('None', 'Row', 'Page')
+            }
         }
     }
 
-    Context "When excluding databases" {
-        It "Should not return results for excluded database" {
-            $excludedResults = Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname
-            $excludedResults | Should -Not -Match $dbname
+    Context "Command excludes results for specified database" {
+        It "Shouldn't get any results for $dbname" {
+            $(Get-DbaDbCompression -SqlInstance $TestConfig.instance2 -Database $dbname -ExcludeDatabase $dbname) | Should not Match $dbname
         }
     }
 }

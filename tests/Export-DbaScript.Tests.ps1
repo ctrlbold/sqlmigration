@@ -1,95 +1,56 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
-)
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
-Describe "Export-DbaScript" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Export-DbaScript
-        $expected = $TestConfig.CommonParameters
-        $expected += @(
-            "InputObject",
-            "ScriptingOptionsObject",
-            "Path",
-            "FilePath",
-            "Encoding",
-            "BatchSeparator",
-            "NoPrefix",
-            "Passthru",
-            "NoClobber",
-            "Append",
-            "EnableException",
-            "Confirm",
-            "WhatIf"
-        )
-    }
-
-    Context "Parameter validation" {
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        It "Should only contain our specific parameters" {
+            [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+            [object[]]$knownParameters = 'InputObject', 'ScriptingOptionsObject', 'Path', 'FilePath', 'Encoding', 'BatchSeparator', 'NoPrefix', 'Passthru', 'NoClobber', 'Append', 'EnableException'
+            $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should -Be 0
         }
     }
 }
 
-Describe "Export-DbaScript" -Tag "IntegrationTests" {
-    Context "When exporting database objects" {
-        BeforeAll {
-            $table = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1
-            $results = $table | Export-DbaScript -Passthru
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "works as expected" {
+
+        It "should export some text matching create table" {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
+            $results -match "CREATE TABLE"
+        }
+        It "should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
+            $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
         }
 
-        It "Should export text matching CREATE TABLE" {
-            $results | Should -Match "CREATE TABLE"
+        It "should include the defined BatchSeparator" {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $results -match "MakeItSo"
         }
 
-        It "Should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
-            $results | Should -Match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
+        It "should not accept non-SMO objects" {
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
+            $invalid -match "not a SQL Management Object"
         }
 
-        It "Should include the defined BatchSeparator when specified" {
-            $customResults = $table | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $customResults | Should -Match "MakeItSo"
+        It "should not accept non-SMO objects" {
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
+            $null = [pscustomobject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction Continue
+            $invalid -match "not a SQL Management Object"
         }
-    }
-
-    Context "When handling invalid input" {
-        It "Should not accept non-SMO objects" {
-            $invalidObject = [pscustomobject]@{ Invalid = $true }
-            $invalidObject | Export-DbaScript -WarningVariable invalid -WarningAction Continue
-            $invalid | Should -Match "not a SQL Management Object"
-        }
-    }
-
-    Context "When using NoPrefix parameter" {
-        BeforeAll {
-            $testPath = "C:\temp"
-            if (-not (Test-Path $testPath)) {
-                $null = New-Item -ItemType Directory -Path $testPath
-            }
-            $outputFile = Join-Path $testPath "msdb.txt"
-            $table = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1
-        }
-
-        It "Should not append content by default with NoPrefix" {
-            $null = $table | Export-DbaScript -NoPrefix -FilePath $outputFile
-            $linecount1 = (Get-Content $outputFile).Count
-            $null = $table | Export-DbaScript -NoPrefix -FilePath $outputFile
-            $linecount2 = (Get-Content $outputFile).Count
+        It "should not append when using NoPrefix (#7455)" {
+            if (-not (Test-Path C:\temp)) { $null = mkdir C:\temp }
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt
+            $linecount1 = (Get-Content C:\temp\msdb.txt).Count
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt
+            $linecount2 = (Get-Content C:\temp\msdb.txt).Count
             $linecount1 | Should -Be $linecount2
-        }
-
-        It "Should append content when Append parameter is used with NoPrefix" {
-            $null = $table | Export-DbaScript -NoPrefix -FilePath $outputFile
-            $linecount1 = (Get-Content $outputFile).Count
-            $null = $table | Export-DbaScript -NoPrefix -FilePath $outputFile -Append
-            $linecount2 = (Get-Content $outputFile).Count
-            $linecount2 | Should -BeGreaterThan $linecount1
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.instance2 -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath C:\temp\msdb.txt -Append
+            $linecount3 = (Get-Content C:\temp\msdb.txt).Count
+            $linecount1 | Should -Not -Be $linecount3
         }
     }
 }

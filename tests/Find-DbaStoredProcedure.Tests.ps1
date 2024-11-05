@@ -1,94 +1,65 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0"}
-param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
-)
+$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
+Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
+$global:TestConfig = Get-TestConfig
 
-Describe "Find-DbaStoredProcedure" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Find-DbaStoredProcedure
-        $expected = $TestConfig.CommonParameters
-        $expected += @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database",
-            "ExcludeDatabase",
-            "Pattern",
-            "IncludeSystemObjects",
-            "IncludeSystemDatabases",
-            "EnableException"
-        )
-    }
-
-    Context "Parameter validation" {
-        It "Has parameter: <_>" -ForEach $expected {
-            $command | Should -HaveParameter $PSItem
-        }
-
-        It "Should have exactly the number of expected parameters ($($expected.Count))" {
-            $hasparms = $command.Parameters.Values.Name
-            Compare-Object -ReferenceObject $expected -DifferenceObject $hasparms | Should -BeNullOrEmpty
+Describe "$CommandName Unit Tests" -Tag 'UnitTests' {
+    Context "Validate parameters" {
+        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $_ -notin ('whatif', 'confirm') }
+        [object[]]$knownParameters = 'SqlInstance', 'SqlCredential', 'Database', 'ExcludeDatabase', 'Pattern', 'IncludeSystemObjects', 'IncludeSystemDatabases', 'EnableException'
+        $knownParameters += [System.Management.Automation.PSCmdlet]::CommonParameters
+        It "Should only contain our specific parameters" {
+            (@(Compare-Object -ReferenceObject ($knownParameters | Where-Object { $_ }) -DifferenceObject $params).Count ) | Should Be 0
         }
     }
 }
 
-Describe "Find-DbaStoredProcedure" -Tag "IntegrationTests" {
-    Context "When finding procedures in system databases" {
+Describe "$commandname Integration Tests" -Tags "IntegrationTests" {
+    Context "Command finds Procedures in a System Database" {
         BeforeAll {
-            $systemProcedureQuery = @"
+            $ServerProcedure = @"
 CREATE PROCEDURE dbo.cp_dbatoolsci_sysadmin
 AS
     SET NOCOUNT ON;
     SELECT [sid],[loginname],[sysadmin]
     FROM [master].[sys].[syslogins];
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $systemProcedureQuery
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $ServerProcedure
         }
-
         AfterAll {
-            $dropProcedureQuery = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $dropProcedureQuery
+            $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'Master' -Query $DropProcedure
         }
-
-        BeforeAll {
-            $systemResults = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -IncludeSystemDatabases
-        }
-
-        It "Should find procedure named cp_dbatoolsci_sysadmin" {
-            $systemResults.Name | Should -Contain "cp_dbatoolsci_sysadmin"
-            $systemResults.DatabaseId | Should -BeExactly (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master).ID
+        $results = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -IncludeSystemDatabases
+        It "Should find a specific StoredProcedure named cp_dbatoolsci_sysadmin" {
+            $results.Name | Should Contain "cp_dbatoolsci_sysadmin"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database master).ID
         }
     }
-
-    Context "When finding procedures in user databases" {
+    Context "Command finds Procedures in a User Database" {
         BeforeAll {
             $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name 'dbatoolsci_storedproceduredb'
-            $userProcedureQuery = @"
+            $StoredProcedure = @"
 CREATE PROCEDURE dbo.sp_dbatoolsci_custom
 AS
     SET NOCOUNT ON;
     PRINT 'Dbatools Rocks';
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_storedproceduredb' -Query $userProcedureQuery
-            $userResults = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
-            $excludeResults = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_storedproceduredb'
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_storedproceduredb' -Query $StoredProcedure
         }
-
         AfterAll {
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database 'dbatoolsci_storedproceduredb' -Confirm:$false
         }
-
-        It "Should find procedure named sp_dbatoolsci_custom" {
-            $userResults.Name | Should -Contain "sp_dbatoolsci_custom"
-            $userResults.DatabaseId | Should -BeExactly (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database dbatoolsci_storedproceduredb).ID
+        $results = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -Database 'dbatoolsci_storedproceduredb'
+        It "Should find a specific StoredProcedure named sp_dbatoolsci_custom" {
+            $results.Name | Should Contain "sp_dbatoolsci_custom"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database dbatoolsci_storedproceduredb).ID
         }
-
         It "Should find sp_dbatoolsci_custom in dbatoolsci_storedproceduredb" {
-            $userResults.Database | Should -Contain "dbatoolsci_storedproceduredb"
+            $results.Database | Should Contain "dbatoolsci_storedproceduredb"
         }
-
-        It "Should find no results when excluding dbatoolsci_storedproceduredb" {
-            $excludeResults | Should -BeNullOrEmpty
+        $results = Find-DbaStoredProcedure -SqlInstance $TestConfig.instance2 -Pattern dbatools* -ExcludeDatabase 'dbatoolsci_storedproceduredb'
+        It "Should find no results when Excluding dbatoolsci_storedproceduredb" {
+            $results | Should Be $null
         }
     }
 }
