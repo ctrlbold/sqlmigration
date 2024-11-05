@@ -21,7 +21,7 @@ if (-not $docs) {
 }
 
 if (-not $home) {
-    $home = $temp
+    Set-Variable -Name home -Value $ $temp -Scope Script
 }
 
 if (-not (Test-Path -Path $temp)) {
