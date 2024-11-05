@@ -10,7 +10,7 @@ Describe "Reset-DbaAdmin" -Tag "UnitTests" {
         $expected = $TestConfig.CommonParameters
         $expected += @(
             "SqlInstance",
-            "SqlCredential", 
+            "SqlCredential",
             "Login",
             "SecurePassword",
             "Force",
