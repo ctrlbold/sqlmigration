@@ -3,69 +3,71 @@ param(
     $ModuleName = "dbatools",
     $PSDefaultParameterValues = ($global:TestConfig = Get-TestConfig).Defaults
 )
-$CommandName = $MyInvocation.MyCommand.Name.Replace(".Tests.ps1", "")
-Write-Host -Object "Running $PSCommandPath" -ForegroundColor Cyan
-$global:TestConfig = Get-TestConfig
 
 Describe "Backup-DbaDatabase" -Tag "UnitTests" {
-    BeforeAll {
-        $command = Get-Command Backup-DbaDatabase
-        $expected = $TestConfig.CommonParameters
-        $expected += @(
-            "SqlInstance",
-            "SqlCredential",
-            "Database",
-            "ExcludeDatabase",
-            "Path",
-            "FilePath",
-            "IncrementPrefix",
-            "ReplaceInName",
-            "NoAppendDbNameInPath",
-            "CopyOnly",
-            "Type",
-            "InputObject",
-            "CreateFolder",
-            "FileCount",
-            "CompressBackup",
-            "Checksum",
-            "Verify",
-            "MaxTransferSize",
-            "BlockSize",
-            "BufferCount",
-            "AzureBaseUrl",
-            "AzureCredential",
-            "NoRecovery",
-            "BuildPath",
-            "WithFormat",
-            "Initialize",
-            "SkipTapeHeader",
-            "TimeStampFormat",
-            "IgnoreFileChecks",
-            "OutputScriptOnly",
-            "EncryptionAlgorithm",
-            "EncryptionCertificate",
-            "Description",
-            "EnableException",
-            "Verbose",
-            "Debug",
-            "ErrorAction",
-            "WarningAction",
-            "InformationAction",
-            "ProgressAction",
-            "ErrorVariable",
-            "WarningVariable",
-            "InformationVariable",
-            "OutVariable",
-            "OutBuffer",
-            "PipelineVariable",
-            "WhatIf",
-            "Confirm"
-        )
-    }
-    Context "When validating parameters" {
-        [object[]]$params = (Get-Command $CommandName).Parameters.Keys | Where-Object { $PSItem -notin "WhatIf", "Confirm" }
-        It "Should only contain our specific parameters" {
-            (@(Compare-Object -ReferenceObject ($expected | Where-Object { $PSItem }) -DifferenceObject $params).Count) | Should Be 0
+    Context "Parameter validation" {
+        BeforeAll {
+            $command = Get-Command Backup-DbaDatabase
+            $expected = $TestConfig.CommonParameters
+            $expected += @(
+                "SqlInstance",
+                "SqlCredential",
+                "Database",
+                "ExcludeDatabase",
+                "Path",
+                "FilePath",
+                "IncrementPrefix",
+                "ReplaceInName",
+                "NoAppendDbNameInPath",
+                "CopyOnly",
+                "Type",
+                "InputObject",
+                "CreateFolder",
+                "FileCount",
+                "CompressBackup",
+                "Checksum",
+                "Verify",
+                "MaxTransferSize",
+                "BlockSize",
+                "BufferCount",
+                "AzureBaseUrl",
+                "AzureCredential",
+                "NoRecovery",
+                "BuildPath",
+                "WithFormat",
+                "Initialize",
+                "SkipTapeHeader",
+                "TimeStampFormat",
+                "IgnoreFileChecks",
+                "OutputScriptOnly",
+                "EncryptionAlgorithm",
+                "EncryptionCertificate",
+                "Description",
+                "EnableException",
+                "Verbose",
+                "Debug",
+                "ErrorAction",
+                "WarningAction",
+                "InformationAction",
+                "ProgressAction",
+                "ErrorVariable",
+                "WarningVariable",
+                "InformationVariable",
+                "OutVariable",
+                "OutBuffer",
+                "PipelineVariable",
+                "WhatIf",
+                "Confirm"
+            )
+        }
+
+        It "Has parameter: <_>" -ForEach $expected {
+            $command | Should -HaveParameter $PSItem
+        }
+
+        It "Should have exactly the number of parameters" {
+            $params = $command.Parameters.Values.Name
+            Compare-Object -ReferenceObject $expected -DifferenceObject $params | Should -BeNullOrEmpty
         }
     }
 }

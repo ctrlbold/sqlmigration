@@ -10,7 +10,7 @@ function Add-ConnectionHashValue {
     if (-not $script:connectionhash) {
         # sometimes the connection hash
         # disappears in pester
-        $script:connectionhash = @{}
+        $script:connectionhash = @{ }
     }
 
     if ($Value.ConnectionContext.NonPooledConnection -or $Value.NonPooledConnection) {

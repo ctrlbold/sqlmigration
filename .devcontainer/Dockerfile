@@ -26,9 +26,9 @@ SHELL ["/opt/microsoft/powershell/7/pwsh", "-c"]
 RUN Set-PSRepository -Name PSGallery -InstallationPolicy Trusted; \
     $ErrorActionPreference='Stop'; \
     Install-Module -Name Pester, dbatools.library -Force -SkipPublisherCheck; \
-    Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 4.4.3; \
-    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -MaximumVersion 1.18.2;
-
+    Install-Module -Name Pester -Force -SkipPublisherCheck -RequiredVersion 4.4.3; \
+    Install-Module -Name PSScriptAnalyzer -Force -SkipPublisherCheck -RequiredVersion 1.18.2;
+#Install-Module -Name PSScriptAnalyzer -RequiredVersion '1.18.2'
 
 # Git command prompt
 # Change this if you want to utilize your fork
