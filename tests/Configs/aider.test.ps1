@@ -1,8 +1,16 @@
 Import-Module /workspace/dbatools.psm1
+$error.Clear()
 $PSDefaultParameterValues['*:Passthru'] = $true
-Invoke-ManualPester -NoReimport -ErrorAction Stop $args -OutVariable testResults #-edit-format diff # -editor-model
+Invoke-ManualPester -TestIntegration -NoReimport -ErrorAction Stop $args |
+Select-Object -ExpandProperty Failed |
+    Select-Object Name, ExpandedPath, ScriptBlock, ErrorRecord -OutVariable testResults |
+    Format-List
 
-if ($testResults.FailedCount -gt 0) {
+if (($testResults).Count -gt 0) {
+    # export the test results using clixml to a path that works in both linux and windows
+    $testResults | Export-Clixml /tmp/testResults.clixml
+    Write-Warning "$(($testResults).Count) tests failed from aider.test.ps1"
+    $error | Select-Object Exception, ScriptStackTrace
     exit 1
 } else {
     exit 0

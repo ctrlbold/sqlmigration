@@ -231,9 +231,11 @@ function Invoke-ManualPester {
             try {
                 Import-Module PSScriptAnalyzer -RequiredVersion $ScriptAnalyzerRequiredVersion -ErrorAction Stop
             } catch {
-                Write-Warning "Failed to import PSScriptAnalyzer $ScriptAnalyzerRequiredVersion"
-                Write-Warning "Please install correct version: Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerRequiredVersion'"
-                return
+                if ($PSItem -notmatch "already loaded") {
+                    Write-Warning "Failed to import PSScriptAnalyzer $ScriptAnalyzerRequiredVersion"
+                    Write-Warning "Please install correct version: Install-Module -Name PSScriptAnalyzer -RequiredVersion '$ScriptAnalyzerRequiredVersion'"
+                    return
+                }
             }
         }
 
@@ -330,7 +332,7 @@ function Invoke-ManualPester {
                 $pester5Config = New-PesterConfiguration
                 $pester5Config.Run.Path = $f.FullName
                 if ($PassThru){
-                    $pester5config.Run.PassThru = $passThru
+                    $pester5config.Run.PassThru = [bool]$PassThru
                 }
                 $pester5config.Output.Verbosity = $show
                 if ($Coverage) {

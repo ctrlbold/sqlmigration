@@ -217,7 +217,16 @@ function Test-Command {
 
         # Build command line arguments
         if ($PSBoundParameters.ContainsKey('Path')) {
-            $cmdArgs += $Path
+            $newPath = @()
+            foreach ($cmd in $Path) {
+                if ($cmd -notmatch 'Tests.ps1') {
+                    $cmd = Get-ChildItem -Path "/workspace/tests/*$cmd*.Tests.ps1" -ErrorAction SilentlyContinue
+                    $cmd = $cmd.FullName
+                }
+                $newPath += $cmd
+                $cmdArgs += $cmd
+            }
+            $Path = $newPath
         }
         if ($PSBoundParameters.ContainsKey('Show')) {
             $cmdArgs += "-Show"
@@ -233,11 +242,49 @@ function Test-Command {
         # Convert array to space-separated string
         $cmdString = $cmdArgs -join ' '
 
+        # Create command from basename
+        # /workspace/public/BaseName.ps1
+        $readonly = @()
+        foreach ($filename in $Path) {
+            $basename = [System.IO.Path]::GetFileNameWithoutExtension($filename)
+            $basename = $basename -replace '\.Tests$', ''
+            $readonly += "/workspace/public/$basename.ps1"
+        }
+
+        $prompt = Get-Content "/workspace/.aider/prompts/fix-test.md" -Raw
+
         Write-Warning "Running tests with command: $cmdString"
         # Call aider with the constructed command string
         # add a file!!
         # it stops apparently, do while or 10 times
-        aider --test --test-cmd "/workspace/tests/Configs/aider.test.ps1 $cmdString" --edit-format diff --file $Path
+        $i = 0
+        do {
+            $i++
+            $parms = @(
+                "--test",
+                "--test-cmd", "/workspace/tests/Configs/aider.test.ps1 $cmdString",
+                "--edit-format", "whole",
+                "--yes-always",
+                "--cache-prompts",
+                "--file", $Path,
+                "--read", $readonly,
+                "--message", $prompt
+            )
+
+            # Run the command with splatting
+            aider @parms
+
+            # sometimes aider upgrades itself and you have to run it again
+            # so check to ensure the xml file exists
+            if ((Test-Path /tmp/testResults.clixml)) {
+                $testResults = Import-Clixml /tmp/testResults.clixml
+                Write-Warning "$(($testResults).Count) failed tests"
+            }
+        } while (($testResults).Count -gt 0 -and $i -lt 1)
+
+        if ((Test-Path /tmp/testResults.clixml)) {
+            Remove-Item /tmp/testResults.clixml
+        }
     }
 }
 
@@ -829,7 +876,7 @@ if (-not (Get-Module dbatools.library -ListAvailable)) {
 
 if (-not (Get-Command Get-DbaDatabase -ErrorAction SilentlyContinue)) {
     Write-Verbose "Importing dbatools module from /workspace/dbatools.psm1"
-    Import-Module /workspace/dbatools.psm1 -Force -Verbose:$false
+    Import-Module /workspace/dbatools.psm1 -Force -Verbose:$false -Global
 }
 
 

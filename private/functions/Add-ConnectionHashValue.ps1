@@ -7,6 +7,12 @@ function Add-ConnectionHashValue {
     )
     Write-Message -Level Debug -Message "Adding to connection hash"
 
+    if (-not $script:connectionhash) {
+        # sometimes the connection hash
+        # disappears in pester
+        $script:connectionhash = @{}
+    }
+
     if ($Value.ConnectionContext.NonPooledConnection -or $Value.NonPooledConnection) {
         if (-not $script:connectionhash["$Key"]) {
             $script:connectionhash["$Key"] = @( )

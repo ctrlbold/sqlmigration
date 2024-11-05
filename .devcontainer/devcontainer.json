@@ -35,7 +35,54 @@
           }
         },
         "terminal.integrated.shell.linux": "pwsh",
-        "terminal.integrated.defaultProfile.linux": "pwsh"
+        "terminal.integrated.defaultProfile.linux": "pwsh",
+        "mssql.connections": [
+            {
+                "server": "dbatools1",
+                "database": "master",
+                "authenticationType": "SqlLogin",
+                "user": "sa",
+                "password": "Password123",
+                "emptyPasswordInput": false,
+                "savePassword": true,
+                "profileName": "dbatools1",
+                "encrypt": "Mandatory",
+                "trustServerCertificate": true,
+                "connectTimeout": 15,
+                "commandTimeout": 30,
+                "applicationName": "vscode-mssql"
+            },
+            {
+                "server": "dbatools2",
+                "database": "master",
+                "authenticationType": "SqlLogin",
+                "user": "sa",
+                "password": "Password123",
+                "emptyPasswordInput": false,
+                "savePassword": true,
+                "profileName": "dbatools2",
+                "encrypt": "Mandatory",
+                "trustServerCertificate": true,
+                "connectTimeout": 15,
+                "commandTimeout": 30,
+                "applicationName": "vscode-mssql"
+            },
+            {
+                "server": "dbatools3",
+                "database": "master",
+                "authenticationType": "SqlLogin",
+                "user": "sa",
+                "password": "Password123",
+                "emptyPasswordInput": false,
+                "savePassword": true,
+                "profileName": "dbatools3",
+                "encrypt": "Mandatory",
+                "trustServerCertificate": true,
+                "connectTimeout": 15,
+                "commandTimeout": 30,
+                "applicationName": "vscode-mssql"
+            }
+        ]
       }
     }
   }
