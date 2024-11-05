@@ -180,7 +180,7 @@ Describe "Get-DbaDatabase" -Tag "IntegrationTests" {
 
 ### Syntax Requirements
 - Use $PSItem instead of $_
-- No trailing spaces
+- NO TRAILING SPACES
 - Use $results.Status.Count for accurate counting
 
 ### Must Not Use
